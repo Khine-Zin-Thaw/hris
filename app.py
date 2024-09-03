@@ -88,5 +88,96 @@ def create_user():
     return render_template('create_user.html')
 
 
+@app.route('/organization')
+def organization():
+    conn = sqlite3.connect('hrm.db')
+    cursor = conn.cursor()
+    
+    # Fetch departments
+    cursor.execute('SELECT dept_id, name FROM department')
+    departments = cursor.fetchall()
+    
+    # Fetch positions with department names
+    cursor.execute('''
+        SELECT p.pos_id, p.position_name, d.name AS department, p.basic_salary
+        FROM position p
+        JOIN department d ON p.dept_id = d.dept_id
+    ''')
+    positions = cursor.fetchall()
+    
+    conn.close()
+    return render_template('organization.html', departments=departments, positions=positions)
+
+
+# Route for adding a department
+@app.route('/add_department', methods=['GET', 'POST'])
+def add_department():
+    if request.method == 'POST':
+        name = request.form['department_name']
+        conn = sqlite3.connect('hrm.db')
+        cursor = conn.cursor()
+        cursor.execute('INSERT INTO department (name) VALUES (?)', (name,))
+        conn.commit()
+        conn.close()
+        return redirect(url_for('organization'))
+    return render_template('add_department.html')
+
+
+@app.route('/add_position', methods=['GET', 'POST'])
+def add_position():
+    if request.method == 'POST':
+        position_name = request.form.get('position_name')
+        department_id = request.form.get('department')
+        basic_salary = request.form.get('basic_salary')
+
+        if not position_name or not department_id or not basic_salary:
+            flash('All fields are required!')
+            return redirect(url_for('add_position'))
+
+        try:
+            conn = sqlite3.connect('hrm.db')
+            cursor = conn.cursor()
+            # Insert new position into the database
+            cursor.execute('''
+            INSERT INTO position (position_name, dept_id, basic_salary) 
+            VALUES (?, ?, ?)
+            ''', (position_name, department_id, basic_salary))
+            conn.commit()
+            conn.close()
+            flash('Position added successfully!')
+
+            # Optional: Update the employee payroll table with the new position's basic salary
+            # Assuming you want to update existing employees with this position
+            # This code assumes that you will be updating the basic_salary for existing employees in that position
+            conn = sqlite3.connect('hrm.db')
+            cursor = conn.cursor()
+            cursor.execute('''
+            UPDATE payroll
+            SET basic_salary = ?
+            WHERE emp_id IN (
+                SELECT emp_id
+                FROM employee
+                WHERE pos_id = (SELECT pos_id FROM position WHERE position_name = ?)
+            )
+            ''', (basic_salary, position_name))
+            conn.commit()
+            conn.close()
+
+        except sqlite3.Error as e:
+            flash(f'An error occurred: {e}')
+            return redirect(url_for('add_position'))
+
+        return redirect(url_for('organization'))
+
+    # GET request: Render the form
+    conn = sqlite3.connect('hrm.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT dept_id, name FROM department')
+    departments = cursor.fetchall()
+    conn.close()
+
+    return render_template('add_position.html', departments=departments)
+
+
 if __name__ == "__main__":
     app.run(debug=True)

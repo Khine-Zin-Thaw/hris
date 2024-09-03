@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Position</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Add Position</h1>
+        <form method="POST" action="{{ url_for('add_position') }}">
+            <div class="form-group">
+                <label for="position_name">Position Name</label>
+                <input type="text" class="form-control" id="position_name" name="position_name" required>
+            </div>
+            <div class="form-group">
+                <label for="department">Department</label>
+                <select class="form-control" id="department" name="department" required>
+                    {% for department in departments %}
+                    <option value="{{ department[0] }}">{{ department[1] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="basic_salary">Basic Salary</label>
+                <input type="number" class="form-control" id="basic_salary" name="basic_salary" step="0.01" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Position</button>
+            <a href="{{ url_for('organization') }}" class="btn btn-secondary ml-2">Return to Organization Main Page</a>
+        </form>
+    </div>
+</body>
+</html>
