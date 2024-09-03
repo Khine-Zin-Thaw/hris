@@ -27,6 +27,7 @@ def login():
     if request.method == 'POST':
         emp_id = request.form.get('emp_id')
         password = request.form.get('password')
+        input_role = request.form.get('role')
 
         conn = get_db()
         cursor = conn.cursor()
@@ -37,11 +38,15 @@ def login():
         user = cursor.fetchone()
 
         if user and bcrypt.checkpw(password.encode('utf-8'), user['password']):
-            session['emp_id'] = user['emp_id']
-            session['role'] = user['role']
-            return redirect(url_for('index'))
+            correct_role = user['role']
+            if correct_role == input_role:
+                session['emp_id'] = user['emp_id']
+                session['role'] = input_role  # Use the input role here
+                return redirect(url_for('index'))
+            else:
+                session['error'] = 'Incorrect role selected'
         else:
-            flash('Invalid login credentials', 'error')
+            session['error'] = 'Invalid login credentials'
 
         conn.close()
 
