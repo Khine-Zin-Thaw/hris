@@ -101,11 +101,6 @@
               </a>
               <ul class="menu-sub">
                 <li class="menu-item">
-                  <a href="{{ url_for('organization') }}" class="menu-link">
-                    <div data-i18n="Organization Dashboard">Organization Dashboard</div>
-                  </a>
-                </li>
-                <li class="menu-item">
                   <a href="{{ url_for('add_department') }}" class="menu-link">
                     <div data-i18n="Department management">Manage Department</div>
                   </a>
@@ -118,21 +113,15 @@
               </ul>
             </li>
             <li class="menu-item">
-              <a href="javascript:void(0);" class="menu-link menu-toggle">
+              <a href="{{ url_for('check_employee_accounts') }}" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons bx bx-lock-open-alt"></i>
                 <div data-i18n="Employee Management">Manage User</div>
               </a>
               <ul class="menu-sub">
                 <li class="menu-item">
-                  <a href="{{ url_for('create_user') }}" class="menu-link" target="_blank">
-                    <div data-i18n="Basic">Add User</div>
+                  <a href="{{ url_for('check_employee_accounts') }}" class="menu-link" target="_blank">
+                    <div data-i18n="Basic">Manage Users</div>
                   </a>
-                </li>
-                <li class="menu-item">
-                  <a href="#" class="menu-link" target="_blank">
-                    <div data-i18n="Basic">Edit User</div>
-                  </a>
-                </li>
               </ul>
             </li>
             <!-- Components -->

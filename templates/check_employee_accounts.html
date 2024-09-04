@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+    <h4 class="fw-bold py-3 mb-4">
+        <span class="text-muted fw-light">Employee Management /</span> Check Employee Accounts
+    </h4>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="alert alert-danger">
+            {% for message in messages %}
+                {{ message }}
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+        <!-- Users Table -->
+        <div class="card mb-4">
+            <h5 class="card-header">Users</h5>
+            <div class="table-responsive text-nowrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Employee Name</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="table-border-bottom-0">
+                        {% for user in users_with_name %}
+                        <tr>
+                            <td>{{ user[0] }}</td>
+                            <td>{{ user[1] }}</td>
+                            <td>{{ user[2] }}</td>
+                            <td>
+                                {% if user[0] == current_emp_id %}
+                                    <span class="badge bg-label-primary me-1">Active</span>
+                                {% else %}
+                                    <span class="badge bg-label-secondary me-1">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('edit_user', user_id=user[0], role=user[2]) }}" class="btn btn-warning btn-sm me-1">Edit</a>
+                                <form action="{{ url_for('delete_user', user_id=user[0], role=user[2]) }}" method="POST" style="display:inline;">
+                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    <!-- Employees with Accounts Table -->
+    <div class="card mb-4">
+        <h5 class="card-header">Employees with Accounts</h5>
+        <div class="table-responsive text-nowrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Employee Name</th>
+                        <th>Current Role</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp in employees_with_accounts %}
+                    <tr>
+                        <td>{{ emp[0] }}</td>
+                        <td>{{ emp[1] }}</td>
+                        <td>{{ emp[2] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- Employees without Accounts Table -->
+    <div class="card mb-4">
+        <h5 class="card-header">Employees without Accounts</h5>
+        <form action="{{ url_for('add_users') }}" method="post">
+            <div class="table-responsive text-nowrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Select</th>
+                            <th>Employee ID</th>
+                            <th>Employee Name</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if employees_without_accounts %}
+                        {% for emp in employees_without_accounts %}
+                        <tr>
+                            <td><input type="checkbox" name="emp_ids" value="{{ emp[0] }}"></td>
+                            <td>{{ emp[0] }}</td>
+                            <td>{{ emp[1] }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="3">No employees found</td>
+                        </tr>
+                    {% endif %}
+                                        </tbody>
+                </table>
+            </div>
+
+            <div class="row align-items-center">
+                <!-- Password Field -->
+                <div class="col-md-4">
+                    <input class="form-control" type="password" name="password" id="password" placeholder="Password" required />
+                </div>
+            
+                <!-- Select Role Dropdown -->
+                <div class="col-md-3">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            Select Role
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="setRole('staff')">Staff</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="setRole('employee')">Employee</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="setRole('manager')">Manager</a></li>
+                        </ul>
+                        <input type="hidden" name="role" id="role" required>
+                    </div>
+                </div>
+            
+                <!-- Create Button -->
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary form-control">Create Selected Users</button>
+                </div>
+            </div>
+            
+            <!-- Add some margin below the form for better spacing -->
+            <style>
+                .row {
+                    margin-top: 10px;
+                }
+            </style>
+                                </form>
+    </div>
+</div>
+{% endblock %}
