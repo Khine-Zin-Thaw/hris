@@ -1,67 +1,56 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create User</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="{{ url_for('index') }}">Home</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('create_user') }}">Create User</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('organization') }}">Organization</a>
-                </li>
-            </ul>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
-    <!-- Page Content -->
-    <div class="container mt-5">
-        <h1>Create User</h1>
+{% block content %}
 
-        {% if error %}
-        <div class="alert alert-danger" role="alert">
-            {{ error }}
-        </div>
-        {% endif %}
-
-        <form method="POST">
-            <div class="form-group">
-                <label for="emp_id">Employee ID</label>
-                <input type="text" class="form-control" id="emp_id" name="emp_id" required>
+<div class="container-xxl flex-grow-1 container-p-y">
+    <h4 class="fw-bold py-3 mb-4">
+      <span class="text-muted fw-light">User management/</span>
+      Create User
+    </h4>
+    
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <div class="card mb-4">
+          <h5 class="card-header">Create User</h5>
+          <div class="card-body">
+            
+            <!-- Display any error messages -->
+            {% if error %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
             </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" class="form-control" id="password" name="password" required>
-            </div>
-            <div class="form-group">
-                <label for="role">Role</label>
-                <select class="form-control" id="role" name="role" required>
-                    <option value="" disabled selected>Select role</option>
-                    <option value="staff">Staff</option>
-                    <option value="recruit_admin">Recruit Admin</option>
-                    <option value="payroll_admin">Payroll Admin</option>
-                    <option value="manager">Manager</option>
+            {% endif %}
+
+            <!-- User Creation Form -->
+            <form method="POST">
+              <div class="mb-3">
+                <label for="emp_id" class="form-label">Employee ID</label>
+                <input type="text" class="form-control" id="emp_id" name="emp_id" placeholder="Enter Employee ID" required>
+              </div>
+              <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" name="password" placeholder="Enter Password" required>
+              </div>
+              <div class="mb-3">
+                <label for="role" class="form-label">Role</label>
+                <select class="form-select" id="role" name="role" required>
+                  <option value="" disabled selected>Select Role</option>
+                  <option value="staff">Staff</option>
+                  <option value="recruit_admin">Recruit Admin</option>
+                  <option value="payroll_admin">Payroll Admin</option>
+                  <option value="manager">Manager</option>
                 </select>
-            </div>
-            <button type="submit" class="btn btn-primary">Create User</button>
-            <a class="btn btn-secondary ml-2" href="{{ url_for('index') }}">Return to Main Page</a>
-        </form>
+              </div>
+              
+              <!-- Submit Button -->
+              <button type="submit" class="btn btn-primary">Create User</button>
+              <a class="btn btn-secondary ms-2" href="{{ url_for('index') }}">Return to Main Page</a>
+            </form>
+            
+          </div>
+        </div>
+      </div>
     </div>
+</div>
 
-    <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-</body>
-</html>
+{% endblock %}
