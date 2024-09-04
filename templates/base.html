@@ -119,7 +119,7 @@
               </a>
               <ul class="menu-sub">
                 <li class="menu-item">
-                  <a href="{{ url_for('check_employee_accounts') }}" class="menu-link" target="_blank">
+                  <a href="{{ url_for('check_employee_accounts') }}" class="menu-link">
                     <div data-i18n="Basic">Manage Users</div>
                   </a>
               </ul>
@@ -135,13 +135,8 @@
               </a>
               <ul class="menu-sub">
                 <li class="menu-item">
-                  <a href="ui-accordion.html" class="menu-link">
+                  <a href="{{ url_for('add_employee') }}" class="menu-link">
                     <div data-i18n="Accordion">Add Employee</div>
-                  </a>
-                </li>
-                <li class="menu-item">
-                  <a href="ui-alerts.html" class="menu-link">
-                    <div data-i18n="Alerts">Edit Employee</div>
                   </a>
                 </li>
               </ul>

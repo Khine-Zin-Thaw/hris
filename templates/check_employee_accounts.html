@@ -99,34 +99,29 @@
                             <td>{{ emp[1] }}</td>
                         </tr>
                         {% endfor %}
-                    {% else %}
+                        {% else %}
                         <tr>
                             <td colspan="3">No employees found</td>
                         </tr>
-                    {% endif %}
-                                        </tbody>
+                        {% endif %}
+                    </tbody>
                 </table>
             </div>
-
+    
             <div class="row align-items-center">
                 <!-- Password Field -->
                 <div class="col-md-4">
-                    <input class="form-control" type="password" name="password" id="password" placeholder="Password" required />
+                    <input class="form-control" type="password" name="password" id="password" placeholder="Enter default password" required />
                 </div>
             
                 <!-- Select Role Dropdown -->
                 <div class="col-md-3">
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                            Select Role
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="setRole('staff')">Staff</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="setRole('employee')">Employee</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="setRole('manager')">Manager</a></li>
-                        </ul>
-                        <input type="hidden" name="role" id="role" required>
-                    </div>
+                    <select class="form-select" name="role" id="role" required>
+                        <option value="" disabled selected>Select Role</option>
+                        <option value="staff">Staff</option>
+                        <option value="employee">Employee</option>
+                        <option value="manager">Manager</option>
+                    </select>
                 </div>
             
                 <!-- Create Button -->
@@ -141,7 +136,7 @@
                     margin-top: 10px;
                 }
             </style>
-                                </form>
+        </form>
     </div>
-</div>
+        </div>
 {% endblock %}

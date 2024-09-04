@@ -430,6 +430,88 @@ def add_users():
     return redirect(url_for('check_employee_accounts'))
 
 
+@app.route('/add_employee', methods=['GET', 'POST'])
+def add_employee():
+    if 'role' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    cursor = conn.cursor()
+
+    if session['role'] == 'staff':
+        emp_id = session.get('emp_id')  # Assuming emp_id is stored in the session
+        cursor.execute('''
+            SELECT e.emp_id, e.emp_name, p.position_name, e.job_status, e.gender, e.termination_date, e.employee_status, e.join_date, d.name AS department_name
+            FROM employee e
+            JOIN position p ON e.pos_id = p.pos_id
+            JOIN department d ON p.dept_id = d.dept_id
+            WHERE e.emp_id = ?
+        ''', (emp_id,))
+    else:
+        cursor.execute('''
+            SELECT e.emp_id, e.emp_name, p.position_name, e.job_status, e.gender, e.termination_date, e.employee_status, e.join_date, d.name AS department_name
+            FROM employee e
+            JOIN position p ON e.pos_id = p.pos_id
+            JOIN department d ON p.dept_id = d.dept_id
+        ''')
+
+    employees = cursor.fetchall()
+
+    if request.method == 'POST':
+        # Handle form submission and add employee
+        emp_name = request.form['emp_name']
+        position_id = request.form['position']
+        job_status = request.form['job_status']
+        gender = request.form['gender']
+        termination_date = request.form['termination_date']
+        join_date = request.form['join_date']
+        employee_status = request.form['employee_status']
+
+        # Get the position details including the department and basic salary
+        cursor.execute('''
+            SELECT position_name, dept_id, basic_salary
+            FROM position
+            WHERE pos_id = ?
+        ''', (position_id,))
+        position = cursor.fetchone()
+        
+        if position:
+            position_name, department_id, basic_salary = position
+
+            # Insert into the employee table
+            cursor.execute('''
+                INSERT INTO employee (emp_name, department, pos_id, job_status, gender, termination_date, join_date, employee_status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (emp_name, department_id, position_id, job_status, gender, termination_date, join_date, employee_status))
+
+            emp_id = cursor.lastrowid  # Get the last inserted employee ID
+
+            # Get the current month and year
+            from datetime import datetime
+            current_month = datetime.now().strftime('%Y-%m')
+            current_year = datetime.now().strftime('%Y')
+
+            # Insert into the payroll table
+            cursor.execute('''
+                INSERT INTO payroll (emp_id, basic_salary, month, year)
+                VALUES (?, ?, ?, ?)
+            ''', (emp_id, basic_salary, current_month, current_year))
+
+            conn.commit()
+            conn.close()
+
+            return redirect(url_for('add_employee'))
+
+    # GET request: Render the form to add an employee
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT pos_id, position_name FROM position')
+    positions = cursor.fetchall()
+    conn.close()
+
+    return render_template('add_employee.html', positions=positions, employees=employees)
+
+
 if __name__ == "__main__":
     app.run(debug=True)
 
