@@ -18,6 +18,14 @@ def index():
     
     return render_template('index.html')
 
+@app.route('/userbase')
+def userbase():
+    if 'role' not in session:
+        return redirect(url_for('login'))
+    
+    return render_template('userbase.html')
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -560,7 +568,7 @@ def check_in():
     
     attendance = cursor.fetchall()
     conn.close()
-
+    flash('Check In process complete.')
     return render_template('check_in.html', attendance=attendance)
 
 

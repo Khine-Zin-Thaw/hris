@@ -1,100 +1,142 @@
-/* Set background for the body */
-body {
-    background-image:     url(../../../img/backgrounds/18.jpg)    ; /* Adjust path to your background image */
-    background-size: cover;
-    background-position: center;
-    height: 100vh;
+/* Full page background with light gray or off-white */
+.container {
+    text-align: center;
+    padding: 20px;
+    background-color: #f5f5f5; /* Light gray for a cleaner look */
+    width: 100%;
+    min-height: 100vh; /* Use min-height to ensure it works better on small screens */
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Center content vertically */
+    align-items: center; /* Center content horizontally */
+}
+
+/* Styling for the System Name box */
+.header h1 {
+    background-color: #e0e0e0; /* Light gray background */
+    color: #5a5a5a; /* Darker gray for the text */
+    padding: 15px;
+    border-radius: 10px; /* Rounded corners */
+    font-size: 24px;
+    width: auto; /* Use auto to allow for dynamic content width */
+    max-width: 100%; /* Ensure the header stays responsive */
+    margin: 20px auto; /* Center the box */
+    text-align: center;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Optional shadow for depth */
+}
+
+/* Buttons with similar color to the header */
+.button {
+    background-color: #e0e0e0; /* Matching the header for consistency */
+    border: none;
+    padding: 15px 30px;
+    margin: 10px 0;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 18px;
+    width: auto; /* Allow the button width to be flexible */
+    max-width: 100%; /* Ensure buttons stay responsive */
+}
+
+/* Dropdown styling */
+.dropdown {
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 10px;
+    font-size: 16px;
+    width: auto; /* Flexibility for dropdown width */
+    max-width: 100%; /* Responsive width control */
+}
+
+/* Icon section layout */
+.icon-section {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+/* Icon box styling */
+.icon-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px;
+}
+
+/* Icon design */
+.icon {
+    width: 60px;
+    height: 60px;
+    background-color: #b0b0b0; /* A neutral gray for the icons */
+    border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-family: 'Roboto', sans-serif; /* You can change this to your preferred font */
+    font-size: 14px;
+    color: black;
 }
 
-/* Main container */
-.container-fluid {
+/* Icon name text */
+.icon-box p {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #333;
+}
+
+/* Center the form horizontally */
+.form-inline {
     display: flex;
-    justify-content: space-around; /* Centers the content with space between boxes */
-    align-items: center;
-    height: 100vh; /* Full height of the viewport */
-    padding: 20px;
-    margin-top: 50px;
-    gap: 20px; /* Add gap between the left and right containers */
+    align-items: center; /* Vertically aligns form controls */
+    justify-content: center; /* Centers form elements horizontally */
+    gap: 20px; /* Adds space between dropdown and button */
 }
 
-/* Style for both left and right sections */
-.left-side, .right-side {
-    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
-    padding: 30px;
-    border-radius: 20px;
-    color: white;
-    text-align: center;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3); /* Adds shadow to boxes */
-    transition: all 0.3s ease; /* Smooth transition for hover effects */
-    width: 400px; /* Fixed width for uniformity */
+/* Label styling with better alignment */
+label[for="status"] {
+    font-size: 16px;
+    margin-right: 10px;
+    line-height: 1.5; /* Adjust line-height to vertically align with dropdown */
+    color: #5a5a5a;
+    white-space: nowrap; /* Prevent the label from wrapping */
+    display: flex; /* Makes it flex to align properly */
+    align-items: center; /* Ensures vertical centering */
 }
 
-/* Style for heading inside the boxes */
-.left-side h2, .right-side h2 {
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* Adds text shadow for better readability */
-    font-weight: bold;
+/* Ensure the form group aligns properly */
+.status-group {
+    margin: 0;
 }
 
-/* List group items (attendance list styling) */
-.left-side ul {
-    padding-left: 0; /* Removes default padding */
-    list-style: none; /* Removes bullet points */
-}
-
-.list-group-item {
-    background: transparent;
+/* Dropdown styling */
+.form-control {
+    background-color: #fff;
     border: none;
-    color: white;
-    font-size: 18px;
-}
-
-/* Style for hover effect on the left and right sections */
-.left-side:hover, .right-side:hover {
-    transform: translateY(-5px); /* Slight lift effect on hover */
-}
-
-/* Customizing the input field */
-input.form-control {
-    border-radius: 20px;
-    border: 1px solid #ccc;
+    border-radius: 10px;
     padding: 10px;
-    width: 100%;
-    margin-bottom: 15px; /* Adds spacing under the input */
+    color: #333;
+    text-align: center;
+    transition: all 0.3s ease;
+    white-space: nowrap; /* Prevents dropdown from resizing */
+    display: flex; /* Ensures dropdown aligns properly */
+    align-items: center;
 }
 
-input.form-control:focus {
-    box-shadow: 0 0 10px rgba(255, 105, 180, 0.5); /* Focus effect with pink shadow */
-    border-color: #ff69b4; /* Pink border on focus */
-}
-
-/* Style the submit button */
-.btn-primary {
-    background-color: #ff69b4; /* Pink color */
-    border-radius: 30px;
+/* Submit button styling */
+button.btn-primary {
+    background-color: #6c63ff;
+    color: white;
     border: none;
-    padding: 10px 20px;
-    transition: background-color 0.3s ease; /* Smooth hover transition */
+    padding: 12px 24px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    white-space: nowrap; /* Prevents button from resizing */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.btn-primary:hover {
-    background-color: #ff85c1; /* Lighter pink hover effect */
-}
-
-/* Responsive adjustments for smaller screens */
-@media (max-width: 768px) {
-    .container-fluid {
-        flex-direction: column; /* Stacks the elements vertically */
-        justify-content: center;
-        align-items: center;
-        gap: 20px;
-    }
-
-    .left-side, .right-side {
-        width: 100%; /* Makes the sections take full width on smaller screens */
-        margin-bottom: 20px; /* Adds margin between the two sections */
-    }
+/* Button hover effect */
+button.btn-primary:hover {
+    background-color: #5a54cc;
 }
