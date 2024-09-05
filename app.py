@@ -512,6 +512,86 @@ def add_employee():
     return render_template('add_employee.html', positions=positions, employees=employees)
 
 
+@app.route('/check_in', methods=['GET', 'POST'])
+def check_in():
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    if request.method == 'POST':
+        status = request.form['status']
+        emp_id = session['emp_id']
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        # Check if a record for today already exists
+        cursor.execute('''
+            SELECT attendance_id FROM attendance
+            WHERE emp_id = ? AND date = ?
+        ''', (emp_id, today))
+        existing_record = cursor.fetchone()
+        
+        if existing_record:
+            # Update the existing record
+            cursor.execute('''
+                UPDATE attendance
+                SET status = ?
+                WHERE emp_id = ? AND date = ?
+            ''', (status, emp_id, today))
+        else:
+            # Insert a new record
+            cursor.execute('''
+                INSERT INTO attendance (emp_id, date, status)
+                VALUES (?, ?, ?)
+            ''', (emp_id, today, status))
+        
+        conn.commit()
+
+    today = datetime.now()
+    start_of_week = today - timedelta(days=today.weekday())
+    end_of_week = start_of_week + timedelta(days=6)
+    
+    cursor.execute('''
+        SELECT date, status
+        FROM attendance
+        WHERE emp_id = ? AND date BETWEEN ? AND ?
+    ''', (session['emp_id'], start_of_week.strftime('%Y-%m-%d'), end_of_week.strftime('%Y-%m-%d')))
+    
+    attendance = cursor.fetchall()
+    conn.close()
+
+    return render_template('check_in.html', attendance=attendance)
+
+
+@app.route('/view_attendance')
+def view_attendance():
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Get attendance for this week
+    today = datetime.now()
+    start_of_week = today - timedelta(days=today.weekday())
+    end_of_week = start_of_week + timedelta(days=6)
+    
+    if session['role'] in ['manager', 'payroll_admin']:
+        cursor.execute('''
+            SELECT emp_id, date, status
+            FROM attendance
+            WHERE date BETWEEN ? AND ?
+        ''', (start_of_week.strftime('%Y-%m-%d'), end_of_week.strftime('%Y-%m-%d')))
+    else:
+        return redirect(url_for('check_in'))
+    
+    attendance = cursor.fetchall()
+    conn.close()
+
+    return render_template('view_attendance.html', attendance=attendance)
+
+
 if __name__ == "__main__":
     app.run(debug=True)
 

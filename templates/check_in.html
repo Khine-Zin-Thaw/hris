@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance & Check-In</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/css/pages/checkin.css') }}">
+    <!-- Include Bootstrap if you are using it -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-md-4 ml-auto mr-auto">
+                <div class="left-side">
+                    <h2>Your Attendance This Week</h2>
+                    <ul class="list-group">
+                        <li class="list-group-item">2024-09-05: Present</li>
+                        <li class="list-group-item">2024-09-04: Present</li>
+                        <li class="list-group-item">2024-09-03: Absent</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-4 ml-auto mr-auto">
+                <div class="right-side">
+                    <h3 class="text-center mb-4">Check-In</h3>
+                    <form>
+                        <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="Status: Present" required>
+                        </div>
+                        <div class="d-flex justify-content-center">
+                            <button type="submit" class="btn-primary">Submit</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+    <div class="container mt-5">
+        <h1>Attendance This Week</h1>
+
+        <a class="btn btn-secondary mb-3" href="{{ url_for('index') }}">Return to Main</a>
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Employee ID</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in attendance %}
+                <tr>
+                    <td>{{ record.emp_id }}</td>
+                    <td>{{ record.date }}</td>
+                    <td>{{ record.status }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endblock %}
+
