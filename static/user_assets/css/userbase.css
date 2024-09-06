@@ -1,0 +1,463 @@
+@import url(https://fonts.googleapis.com/css?family=Roboto:400,500);
+@import url(https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css);
+
+/* General reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-image: url('path_to_your_background_image.jpg'); /* Replace with your actual image path */
+  background-size: cover;
+  background-position: center;
+}
+
+/* Header styling */
+.header {
+  font-size: 2.5rem; /* Increase the font size */
+  font-weight: bold;  /* Make the text bold */
+  text-align: center;
+  color: #6c63ff; /* Match the theme color */
+  margin-bottom: 20px;
+  letter-spacing: 1px; /* Add slight spacing for better aesthetics */
+}
+
+/* Carousel styling */
+.carousel-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  margin: 20px auto;
+  overflow: hidden;
+}
+
+.slider {
+  height: 400px; /* Adjust the height of the slider */
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.slider__inner {
+  display: flex;
+  transition: transform 0.5s ease;
+}
+
+
+.slider__caption {
+  position: absolute;
+  z-index: 2;
+  color: white;
+  text-align: center;
+  width: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 2.5rem;
+  font-weight: bold;
+
+
+}
+
+
+.slider__txt {
+  position: absolute;
+  z-index: 2;
+  color: white;
+  text-align: center;
+  width: 100%;
+  top: 60%;
+  font-size: 1.2rem;
+
+
+}
+
+.slider__nav {
+  display: none;
+}
+
+
+.slider__contents {
+  position: relative; /* Ensure the overlay text stays on the slide */
+  width: 100%; /* Each slide takes up full width */
+  flex: 0 0 100%; /* Ensure each slide only takes up 100% of the container width */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%; /* Ensure the content fills the height of the slider */
+
+}
+
+
+.slider__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4); /* Semi-transparent overlay */
+  z-index: 1; /* Behind text but above the image */
+}
+
+
+.slider__image {
+  width: 100%;  /* Image will take full width of the slider */
+  height: 100%; /* Image will take full height of the slider */
+  object-fit: cover; /* Ensures the image scales properly */
+  z-index: 1; /* Ensure the image is behind the text */
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6); /* Add a semi-transparent overlay */
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#nav1:checked ~ .slider__inner #slide1 .overlay,
+#nav2:checked ~ .slider__inner #slide2 .overlay,
+#nav3:checked ~ .slider__inner #slide3 .overlay,
+#nav4:checked ~ .slider__inner #slide4 .overlay {
+    opacity: 1;
+}
+
+#nav1:checked ~ .slider__inner {
+  transform: translateX(0);
+}
+
+#nav2:checked ~ .slider__inner {
+  transform: translateX(-100%);
+}
+
+#nav3:checked ~ .slider__inner {
+  transform: translateX(-200%);
+}
+
+#nav4:checked ~ .slider__inner {
+  transform: translateX(-300%);
+}
+
+
+/* Carousel controls (dots) */
+.carousel-controls {
+  position: absolute;
+  bottom: 20px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  z-index: 2;
+}
+
+.carousel-control.active {
+  background-color: #6c63ff; /* Active dot */
+}
+
+
+.carousel-control {
+  width: 12px;
+  height: 12px;
+  margin: 0 8px;
+  border-radius: 50%;
+  background-color: #ccc;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#nav1:checked ~ .carousel-controls label[for="nav1"],
+#nav2:checked ~ .carousel-controls label[for="nav2"],
+#nav3:checked ~ .carousel-controls label[for="nav3"],
+#nav4:checked ~ .carousel-controls label[for="nav4"] {
+  background-color: #6c63ff;
+}
+
+/* Form styling */
+.form-group {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px; /* Space between dropdown and button */
+}
+
+.form-control {
+  max-width: 250px;
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid #ced4da;
+  background-color: white;
+  font-size: 1rem;
+}
+
+.submit-btn {
+  background-color: #6c63ff;
+  color: white;
+  padding: 10px 16px; /* Reduced padding for a sleeker look */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+  width: 100px; /* Adjusted width to match the dropdown */
+
+
+}
+
+.submit-btn:hover {
+  background-color: #5753d1;
+}
+
+/* Error message container */
+.alert {
+  background-color: #f8d7da;
+  color: #721c24;
+  border-radius: 5px;
+  padding: 15px;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+  border-radius: 5px;
+  padding: 15px;
+  margin-top: 20px;
+  text-align: center;
+}
+
+/* Icon section */
+.icon-section {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 icons per row by default */
+  gap: 40px 60px; /* Adjust the gap between rows and columns */
+  justify-items: center;
+  padding: 20px;
+}
+
+.icon-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between; /* Ensure space between image and text */
+  width: 150px; /* Adjust the width of the icon container */
+  text-align: center;
+  height: 200px; /* Fixed height to ensure all boxes are the same size */
+  margin: 0; /* Remove unnecessary margin */
+}
+
+.circle-icon {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: #6c63ff; /* Icon background color */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden; /* Ensure the image stays inside the circle */
+}
+
+.circle-icon img {
+  width: 100%; /* Make sure the image fits the circle */
+  height: 100%;
+  border-radius: 50%; /* Ensure the image fits the circular container */
+  object-fit: cover; /* Ensure the image scales properly without distortion */
+}
+
+.icon-box {
+  text-align: center; /* Ensure the text below is centered */
+  width: 150px; /* Adjust the width of the icon container */
+  margin: 20px auto; /* Add spacing around the icons */
+}
+
+
+.icon-box a {
+  text-decoration: none; /* Remove underline from links */
+  color: inherit; /* Inherit the color from the parent */
+}
+
+.circle-icon i {
+  font-size: 2rem;
+  color: white;
+}
+
+.icon-box p {
+  margin: 10px 0 0 0; /* Control spacing between image and text */
+  font-size: 1rem;
+  color: #333;
+  text-align: center;
+
+}
+
+/* Card styling */
+.card {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+  background-color: rgba(255, 255, 255, 0.8); /* Transparent white */
+}
+
+.card-img-top {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  object-fit: cover;
+  margin-bottom: 20px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card-body {
+  padding: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .header {
+    font-size: 2rem;
+  }
+
+  .form-control {
+    max-width: 300px;
+  }
+
+  .icon-section {
+    grid-template-columns: repeat(2, 1fr); /* 2 icons per row */
+  }
+
+  .circle-icon {
+    width: 80px;
+    height: 80px;
+  }
+
+  .icon-box {
+    width: 100px; /* Adjust the width of the icon container */
+  }
+}
+
+@media (max-width: 576px) {
+  .header {
+    font-size: 1.5rem;
+  }
+
+  .form-control {
+    max-width: 250px;
+  }
+
+  .icon-section {
+    grid-template-columns: 1fr; /* 1 icon per row */
+  }
+  .circle-icon {
+    width: 70px;
+    height: 70px;
+  }
+
+  .icon-box {
+    width: 80px; /* Adjust the width of the icon container */
+  }
+
+}
+
+
+
+.attendance-form {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+/* Styling for Check In text */
+h6.text-muted {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #6c757d;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+
+/* Payroll Table Styling */
+table {
+  width: 80%; /* Make the table take up 80% of the available width */
+  margin: 30px auto; /* Center the table with some space above */
+  border-collapse: collapse; /* Remove double borders between cells */
+  font-family: 'Roboto', sans-serif;
+  font-size: 1rem;
+  color: #333;
+}
+
+table th, table td {
+  padding: 12px 15px; /* Add some padding for better spacing */
+  text-align: center; /* Center-align the text */
+  border-bottom: 1px solid #ddd; /* Add a light border between rows */
+}
+
+table th {
+  background-color: #6c63ff; /* Add a purple background to table headers */
+  color: white; /* White text for better contrast */
+  text-transform: uppercase; /* Make the header text uppercase */
+  font-size: 1.1rem; /* Slightly larger font size for headers */
+}
+
+table td {
+  background-color: #f9f9f9; /* Light background for table cells */
+}
+
+table tr:nth-child(even) td {
+  background-color: #f1f1f1; /* Light gray background for alternating rows */
+}
+
+table tr:hover td {
+  background-color: #e2e8f0; /* Light blue-gray background on hover */
+}
+
+/* Table Heading */
+h1 {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 500;
+  color: #6c63ff; /* Purple color matching the theme */
+  margin-bottom: 20px;
+  font-family: 'Roboto', sans-serif;
+}
+
+/* Footer Styling */
+footer {
+  margin-top: 40px; /* Add spacing above footer */
+  padding: 20px 0;
+  background-color: #eee;
+  text-align: center;
+  color: #666;
+  font-family: 'Roboto', sans-serif;
+}
+
+footer a {
+  color: #6c63ff; /* Link color for theme consistency */
+  text-decoration: none;
+}
+
+footer a:hover {
+  text-decoration: underline; /* Underline on hover */
+}

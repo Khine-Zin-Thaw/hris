@@ -437,6 +437,30 @@ def add_users():
     flash('User accounts created successfully!')
     return redirect(url_for('check_employee_accounts'))
 
+@app.route('/myinfo')
+def myinfo():
+    if 'role' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    emp_id = session.get('emp_id')  # Assuming emp_id is stored in the session
+    cursor.execute('''
+            SELECT e.emp_id, e.emp_name, p.position_name, e.job_status, e.gender, e.termination_date, e.employee_status, e.join_date, d.name AS department_name
+            FROM employee e
+            JOIN position p ON e.pos_id = p.pos_id
+            JOIN department d ON p.dept_id = d.dept_id
+            WHERE e.emp_id = ?
+    ''', (emp_id,))
+    employees = cursor.fetchall()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT pos_id, position_name FROM position')
+    positions = cursor.fetchall()
+    conn.close()
+
+    return render_template('myinfo.html', positions=positions, employees=employees)
+
 
 @app.route('/add_employee', methods=['GET', 'POST'])
 def add_employee():
@@ -877,6 +901,51 @@ def my_payroll():
         payroll_data_list.append(record)
 
     return render_template('my_payroll.html', payroll_data=payroll_data_list, current_year=current_year)
+
+
+@app.route('/payroll', methods=['GET'])
+def payroll():
+    if 'role' not in session or session['role'] not in ['manager', 'payroll_admin', 'staff', 'recruit_admin']:
+        return 'Access denied', 403
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    emp_id = session.get('emp_id')  # Ensure emp_id is set in the session
+
+    cursor.execute('''
+            SELECT p.emp_id, e.emp_name AS name, p.basic_salary, p.tax, p.ssb, p.monthly_payout, 
+                   p.net_salary, p.total_present, p.total_leave, p.edit_reason
+            FROM payroll p
+            JOIN employee e ON p.emp_id = e.emp_id
+            WHERE p.emp_id = ?
+        ''', (emp_id,))
+
+    payroll_data = cursor.fetchall()
+    conn.close()
+
+    return render_template('my_payroll.html', payroll_data=payroll_data)
+
+#ideas
+# # Route for Attendance Record
+# @app.route('/attendance')
+# def attendance():
+#     return render_template('attendance.html')
+
+# # Route for Career History
+# @app.route('/career')
+# def career():
+#     return render_template('career.html')
+
+# # Route for Contact HR Team
+# @app.route('/contact_hr')
+# def contact_hr():
+#     return render_template('contact_hr.html')
+
+# # Route for Contact IT Team
+# @app.route('/contact_it')
+# def contact_it():
+#     return render_template('contact_it.html')
 
 if __name__ == "__main__":
     app.run(debug=True)

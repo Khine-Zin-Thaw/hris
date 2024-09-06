@@ -1,0 +1,41 @@
+{% extends "userbase.html" %}
+
+{% block content %}
+
+
+<div class="container mt-4">
+    <h1>My Information</h1>
+
+    <a class="btn btn-secondary mb-3" href="{{ url_for('check_in') }}">Return to Main Page</a>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Employee ID</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Job Status</th>
+                <th>Gender</th>
+                <th>Join Date</th>
+                <th>Employee Status</th>
+                <th>Termination Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for employee in employees %}
+            <tr>
+                <td>{{ employee.emp_id }}</td>
+                <td>{{ employee.emp_name }}</td>
+                <td>{{ employee.department_name }}</td>
+                <td>{{ employee.job_status }}</td>
+                <td>{{ employee.gender }}</td>
+                <td>{{ employee.join_date }}</td>
+                <td>{{ employee.employee_status }}</td>
+                <td>{{ employee.termination_date }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+    {% endblock %}
