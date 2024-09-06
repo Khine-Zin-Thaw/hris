@@ -582,15 +582,21 @@ def view_attendance():
     
     # Get attendance for this week
     today = datetime.now()
-    start_of_week = today - timedelta(days=today.weekday())
-    end_of_week = start_of_week + timedelta(days=6)
+
+    start_of_month = today.replace(day=1)
+
+    if today.month == 12:  # If it's December, go to January of the next year
+        end_of_month = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+    else:
+        end_of_month = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
     
     if session['role'] in ['manager', 'payroll_admin']:
         cursor.execute('''
-            SELECT emp_id, date, status
-            FROM attendance
-            WHERE date BETWEEN ? AND ?
-        ''', (start_of_week.strftime('%Y-%m-%d'), end_of_week.strftime('%Y-%m-%d')))
+    SELECT employee.emp_id, employee.emp_name, attendance.date, attendance.status
+    FROM attendance
+    JOIN employee ON attendance.emp_id = employee.emp_id
+    WHERE attendance.date BETWEEN ? AND ?
+        ''', (start_of_month.strftime('%Y-%m-%d'), end_of_month.strftime('%Y-%m-%d')))
     else:
         return redirect(url_for('check_in'))
     
@@ -599,6 +605,278 @@ def view_attendance():
 
     return render_template('view_attendance.html', attendance=attendance)
 
+
+@app.route('/payroll_landing', methods=['GET'])
+def payroll_landing():
+    if 'role' not in session or session['role'] not in ['manager', 'payroll_admin', 'staff', 'recruit_admin']:
+        return 'Access denied', 403
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Adjust the SQL query to fetch all required fields
+    if session['role'] in ['staff', 'recruit_admin']:
+        emp_id = session.get('emp_id')  # Ensure emp_id is set in the session
+
+        cursor.execute('''
+            SELECT p.emp_id, e.emp_name AS name, p.basic_salary, p.tax, p.ssb, p.monthly_payout, 
+                   p.net_salary, p.total_present, p.total_leave, p.edit_reason
+            FROM payroll p
+            JOIN employee e ON p.emp_id = e.emp_id
+            WHERE p.emp_id = ?
+        ''', (emp_id,))
+    else:
+        cursor.execute('''
+            SELECT e.emp_id, e.emp_name AS name, p.basic_salary, p.tax, p.ssb, p.monthly_payout, 
+                   p.net_salary, p.total_present, p.total_leave, p.edit_reason
+            FROM payroll p
+            JOIN employee e ON p.emp_id = e.emp_id
+        ''')
+
+    payroll_data = cursor.fetchall()
+    conn.close()
+
+    return render_template('payroll_landing.html', payroll_data=payroll_data)
+
+@app.route('/calculate_payroll', methods=['POST'])
+def calculate_payroll():
+    if session.get('role') != 'manager':
+        return redirect(url_for('index'))
+
+    db = get_db()
+
+    try:
+        # Fetch current payroll settings
+        settings = db.execute('SELECT default_ssb, tax_percentage FROM payroll_settings').fetchone()
+        ssb_amount = settings['default_ssb']
+        tax_percentage = settings['tax_percentage']
+
+        # Get all employees
+        employees = db.execute('SELECT emp_id, basic_salary FROM payroll').fetchall()
+
+        for employee in employees:
+            emp_id = employee['emp_id']
+            basic_salary = employee['basic_salary']
+
+            # Fetch attendance records for the employee
+            attendance = db.execute('''
+                SELECT status, COUNT(*) AS count
+                FROM attendance
+                WHERE emp_id = ?
+                GROUP BY status
+            ''', (emp_id,)).fetchall()
+
+            total_present = next((record['count'] for record in attendance if record['status'] == 'Present'), 0)
+            total_leave = next((record['count'] for record in attendance if record['status'] == 'Leave'), 0)
+
+            # Calculate daily salary and monthly payout
+            daily_salary = basic_salary / 30
+            monthly_payout = (daily_salary * total_present) + (daily_salary * total_leave)
+            monthly_payout = round(monthly_payout, 2)
+
+            # Calculate tax
+            tax = (tax_percentage / 100) * monthly_payout
+            tax = round(tax, 2)
+
+            # Calculate net salary
+            net_salary = monthly_payout - tax - ssb_amount
+            net_salary = round(net_salary, 2)
+
+            # Format SSB amount
+            ssb_amount = round(ssb_amount, 2)
+
+            # Update payroll records
+            db.execute('''
+                UPDATE payroll
+                SET monthly_payout = ?, tax = ?, ssb = ?, net_salary = ?, total_present = ?, total_leave = ?
+                WHERE emp_id = ?
+            ''', (monthly_payout, tax, ssb_amount, net_salary, total_present, total_leave, emp_id))
+
+        db.commit()
+        session['success'] = 'Payroll calculated and updated successfully!'
+    except Exception as e:
+        session['error'] = f'Error calculating payroll: {e}'
+
+    return redirect(url_for('payroll_landing'))
+
+
+@app.route('/payroll_settings', methods=['GET', 'POST'])
+def payroll_settings():
+    if session.get('role') != 'manager':
+        return redirect(url_for('index'))
+
+    db = get_db()
+
+    if request.method == 'POST':
+        default_ssb = request.form.get('default_ssb')
+        tax_percentage = request.form.get('tax_percentage')
+
+        try:
+            # Update payroll settings in the database
+            if default_ssb:
+                db.execute('UPDATE payroll_settings SET default_ssb = ?', (default_ssb,))
+            if tax_percentage:
+                db.execute('UPDATE payroll_settings SET tax_percentage = ?', (tax_percentage,))
+            
+            # Update existing employee payroll records
+            if default_ssb:
+                db.execute('UPDATE payroll SET ssb = ?', (default_ssb,))
+            if tax_percentage:
+                db.execute('UPDATE payroll SET tax = monthly_payout * ? / 100', (tax_percentage,))
+            
+            db.commit()
+            session['success'] = 'Settings updated successfully!'
+        except Exception as e:
+            session['error'] = f'Error updating settings: {e}'
+
+        return redirect(url_for('payroll_settings'))
+
+    # Fetch current settings from payroll_settings table
+    settings = db.execute('SELECT default_ssb, tax_percentage FROM payroll_settings').fetchone()
+
+    # Provide default values if settings are not found
+    current_ssb_amount = settings['default_ssb'] if settings else 6000.0
+    current_tax_rate = settings['tax_percentage'] if settings else 3.0
+
+    return render_template('payroll_settings.html', current_ssb_amount=current_ssb_amount, current_tax_rate=current_tax_rate)
+
+
+@app.route('/edit_payroll/<emp_id>', methods=['GET', 'POST'])
+def edit_payroll(emp_id):
+    db = get_db()
+    if request.method == 'POST':
+        # Fetch form data
+        basic_salary = request.form['basic_salary']
+        tax = request.form['tax']
+        ssb = request.form['ssb']
+        monthly_payout = request.form['monthly_payout']
+        net_salary = request.form['net_salary']
+        edit_reason = request.form['edit_reason']
+
+        # Update payroll with edit reason
+        db.execute(
+            'UPDATE payroll SET basic_salary = ?, tax = ?, ssb = ?, monthly_payout = ?, net_salary = ?, edit_reason = ? WHERE emp_id = ?',
+            (basic_salary, tax, ssb, monthly_payout, net_salary, edit_reason, emp_id)
+        )
+        db.commit()
+        session['success'] = 'Payroll updated successfully!'
+        return redirect(url_for('payroll_landing'))
+
+    payroll_data = db.execute('SELECT * FROM payroll WHERE emp_id = ?', (emp_id,)).fetchone()
+    return render_template('edit_payroll.html', payroll_data=payroll_data)
+
+
+@app.route('/reset_payroll', methods=['POST'])
+def reset_payroll():
+    if 'role' not in session or session['role'] not in ['manager', 'payroll_admin']:
+        return 'Access denied', 403
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Get the current month and year
+    from datetime import datetime
+    now = datetime.now()
+    current_month = now.strftime('%B')
+    current_year = now.strftime('%Y')
+
+    try:
+        # Step 1: Insert or replace records into payroll_archive, preserving original edit_reason
+        cursor.execute('''
+            INSERT OR REPLACE INTO payroll_archive (emp_id, basic_salary, tax, ssb, total_present, total_leave, monthly_payout, net_salary, month, year, edit_reason)
+            SELECT emp_id, basic_salary, tax, ssb, total_present, total_leave, monthly_payout, net_salary, ?, ?, edit_reason
+            FROM payroll
+        ''', (current_month, current_year))
+
+        # Step 2: Reset payroll data
+        cursor.execute('''
+            UPDATE payroll
+            SET tax = 0, ssb = 0, monthly_payout = 0, net_salary = 0, total_present = 0, total_leave = 0, edit_reason = ''
+        ''')
+
+        # Commit changes
+        conn.commit()
+
+        # Set success message
+        session['success'] = 'Payroll has been reset and archived successfully.'
+
+    except Exception as e:
+        # Rollback in case of error
+        conn.rollback()
+        # Set error message
+        session['error'] = f'Error occurred while resetting payroll: {str(e)}'
+
+    finally:
+        conn.close()
+
+    return redirect(url_for('payroll_landing'))
+
+@app.route('/view_archived_payroll', methods=['GET', 'POST'])
+def view_archived_payroll():
+    if 'role' not in session or session['role'] not in ['manager', 'payroll_admin']:
+        return 'Access denied', 403
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    archived_payroll_data = []
+    selected_month = None
+    selected_year = None
+
+    if request.method == 'POST':
+        selected_month = request.form['month']
+        selected_year = request.form['year']
+
+        cursor.execute('''
+            SELECT pa.emp_id, e.emp_name, pa.basic_salary, pa.tax, pa.ssb, pa.monthly_payout, pa.net_salary, pa.total_present, pa.total_leave, pa.month, pa.year, pa.edit_reason
+            FROM payroll_archive pa
+            JOIN employee e ON pa.emp_id = e.emp_id
+            WHERE pa.month = ? AND pa.year = ?
+            ORDER BY e.emp_name ASC
+        ''', (selected_month, selected_year))
+
+        archived_payroll_data = cursor.fetchall()
+
+    return render_template('view_archived_payroll.html', archived_payroll_data=archived_payroll_data, selected_month=selected_month, selected_year=selected_year)
+
+
+@app.route('/my_payroll', methods=['GET'])
+def my_payroll():
+    if 'emp_id' not in session:
+        return redirect(url_for('login'))
+
+    emp_id = session['emp_id']
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Get the current year
+    from datetime import datetime
+    now = datetime.now()
+    current_year = now.strftime('%Y')
+
+    # Fetch archived payroll data for the current year
+    cursor.execute('''
+        SELECT emp_id, basic_salary, tax, ssb, monthly_payout, net_salary, total_present, total_leave, month, year
+        FROM payroll_archive
+        WHERE emp_id = ? AND year = ?
+        ORDER BY month ASC
+    ''', (emp_id, current_year))
+
+    payroll_data = cursor.fetchall()
+
+    # Convert the rows to a list of dictionaries
+    payroll_data_list = []
+    month_names = {
+        '01': 'January', '02': 'February', '03': 'March', '04': 'April',
+        '05': 'May', '06': 'June', '07': 'July', '08': 'August',
+        '09': 'September', '10': 'October', '11': 'November', '12': 'December'
+    }
+    for row in payroll_data:
+        record = dict(row)  # Convert sqlite3.Row to a dictionary
+        record['month'] = month_names.get(record['month'], record['month'])  # Default to numeric month if not found
+        payroll_data_list.append(record)
+
+    return render_template('my_payroll.html', payroll_data=payroll_data_list, current_year=current_year)
 
 if __name__ == "__main__":
     app.run(debug=True)

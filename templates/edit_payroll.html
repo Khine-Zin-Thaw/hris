@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+    <div class="container mt-4">
+        <h1>Edit Payroll Data for Employee ID {{ payroll_data.emp_id }}</h1>
+        <form action="{{ url_for('edit_payroll', emp_id=payroll_data.emp_id) }}" method="post">
+            <div class="form-group">
+                <label for="basic_salary">Basic Salary</label>
+                <input type="text" class="form-control" id="basic_salary" name="basic_salary" value="{{ payroll_data.basic_salary }}" required>
+            </div>
+            <div class="form-group">
+                <label for="tax">Tax</label>
+                <input type="text" class="form-control" id="tax" name="tax" value="{{ payroll_data.tax }}" required>
+            </div>
+            <div class="form-group">
+                <label for="ssb">SSB</label>
+                <input type="text" class="form-control" id="ssb" name="ssb" value="{{ payroll_data.ssb }}" required>
+            </div>
+            <div class="form-group">
+                <label for="monthly_payout">Monthly Payout</label>
+                <input type="text" class="form-control" id="monthly_payout" name="monthly_payout" value="{{ payroll_data.monthly_payout }}" required>
+            </div>
+            <div class="form-group">
+                <label for="net_salary">Net Salary</label>
+                <input type="text" class="form-control" id="net_salary" name="net_salary" value="{{ payroll_data.net_salary }}" required>
+            </div>
+            <div class="form-group">
+                <label for="edit_reason">Change Reason</label>
+                <input type="text" class="form-control" id="edit_reason" name="edit_reason" value="{{ payroll_data.edit_reason }}" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Update Payroll</button>
+        </form>
+    </div>
+
+    {% endblock %}

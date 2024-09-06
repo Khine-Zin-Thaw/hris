@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+    <!-- Page Content -->
+    <div class="container mt-4">
+        <h1>View Archived Payroll</h1>
+
+        <form method="post" class="mb-4">
+            <div class="form-group">
+                <label for="month">Select Month</label>
+                <select id="month" name="month" class="form-control" required>
+                    <option value="January" {% if selected_month == "January" %}selected{% endif %}>January</option>
+                    <option value="February" {% if selected_month == "February" %}selected{% endif %}>February</option>
+                    <option value="March" {% if selected_month == "March" %}selected{% endif %}>March</option>
+                    <option value="April" {% if selected_month == "April" %}selected{% endif %}>April</option>
+                    <option value="May" {% if selected_month == "May" %}selected{% endif %}>May</option>
+                    <option value="June" {% if selected_month == "June" %}selected{% endif %}>June</option>
+                    <option value="July" {% if selected_month == "July" %}selected{% endif %}>July</option>
+                    <option value="August" {% if selected_month == "August" %}selected{% endif %}>August</option>
+                    <option value="September" {% if selected_month == "September" %}selected{% endif %}>September</option>
+                    <option value="October" {% if selected_month == "October" %}selected{% endif %}>October</option>
+                    <option value="November" {% if selected_month == "November" %}selected{% endif %}>November</option>
+                    <option value="December" {% if selected_month == "December" %}selected{% endif %}>December</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="year">Input Year</label>
+                <input type="number" id="year" name="year" class="form-control" value="{{ selected_year }}" required>
+            </div>
+            <button type="submit" class="btn btn-primary">View Archived Payroll</button>
+        </form>
+
+        {% if archived_payroll_data %}
+        <h2>Archived Payroll Data</h2>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Employee ID</th>
+                    <th>Name</th>
+                    <th>Basic Salary</th>
+                    <th>Tax</th>
+                    <th>SSB</th>
+                    <th>Monthly Payout</th>
+                    <th>Net Salary</th>
+                    <th>Total Present</th>
+                    <th>Total Leave</th>
+                    <th>Edit Reason</th>
+                    <th>Month</th>
+                    <th>Year</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in archived_payroll_data %}
+                <tr>
+                    <td>{{ record['emp_id'] }}</td>
+                    <td>{{ record['emp_name'] }}</td>
+                    <td>{{ record['basic_salary'] | round(2) }}</td>
+                    <td>{{ record['tax'] | round(2) }}</td>
+                    <td>{{ record['ssb'] | round(2) }}</td>
+                    <td>{{ record['monthly_payout'] | round(2) }}</td>
+                    <td>{{ record['net_salary'] | round(2) }}</td>
+                    <td>{{ record['total_present'] }}</td>
+                    <td>{{ record['total_leave'] }}</td>
+                    <td>{{ record['edit_reason'] }}</td>
+                    <td>{{ record['month'] }}</td>
+                    <td>{{ record['year'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No archived payroll data found for the selected month and year.</p>
+        {% endif %}
+    </div>
+
+    {% endblock %}

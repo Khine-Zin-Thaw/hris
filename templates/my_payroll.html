@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="{{ url_for('index') }}">Home</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('employee') }}">Employee</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('organization') }}">Organization</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('check_in') }}">Attendance</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('payroll_landing') }}">Payroll</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('create_user') }}">Create user</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Page Content -->
+    <div class="container mt-4">
+        <h1>My Payroll for {{ current_year }}</h1>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th>Basic Salary</th>
+                    <th>Tax</th>
+                    <th>SSB</th>
+                    <th>Monthly Payout</th>
+                    <th>Net Salary</th>
+                    <th>Total Present</th>
+                    <th>Total Leave</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in payroll_data %}
+                <tr>
+                    <td>{{ record.month }}</td>
+                    <td>{{ record.basic_salary | float | round(2) }}</td>
+                    <td>{{ record.tax | float | round(2) }}</td>
+                    <td>{{ record.ssb | float | round(2) }}</td>
+                    <td>{{ record.monthly_payout | float | round(2) }}</td>
+                    <td>{{ record.net_salary | float | round(2) }}</td>
+                    <td>{{ record.total_present }}</td>
+                    <td>{{ record.total_leave }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% endblock %}
