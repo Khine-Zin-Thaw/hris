@@ -23,6 +23,19 @@ def init_db():
         FOREIGN KEY (dept_id) REFERENCES department (dept_id)
     )
     ''')
+    
+    # Create position table
+cursor.execute('''
+    CREATE TABLE team (
+    team_id INTEGER PRIMARY KEY,
+    team_name TEXT NOT NULL,
+    dept_id INTEGER,
+    leader_id INTEGER,
+    FOREIGN KEY (dept_id) REFERENCES department(dept_id),
+    FOREIGN KEY (leader_id) REFERENCES employee(emp_id)
+);
+    ''')
+
 
     # Create employee table
     cursor.execute('''

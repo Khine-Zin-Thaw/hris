@@ -2,9 +2,13 @@ from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import sqlite3
 import bcrypt
+import logging
 
 app = Flask(__name__)
 app.secret_key = '123'
+
+logging.basicConfig(filename='app.log', level=logging.ERROR)
+
 
 def get_db():
     conn = sqlite3.connect('hrm.db')
@@ -17,6 +21,14 @@ def index():
         return redirect(url_for('login'))
     
     return render_template('index.html')
+
+@app.route('/contact_us')
+def contact_us():
+    if 'role' not in session:
+        return redirect(url_for('login'))
+    
+    return render_template('contact_us.html')
+
 
 @app.route('/userbase')
 def userbase():
@@ -90,7 +102,12 @@ def organization():
     conn = get_db()
     cursor = conn.cursor()
     
-    cursor.execute('SELECT dept_id, name FROM department')
+    # Select department with the leader details
+    cursor.execute('''
+        SELECT d.dept_id, d.name, e.emp_name AS leader_name
+        FROM department d
+        LEFT JOIN employee e ON d.leader_id = e.emp_id
+    ''')
     departments = cursor.fetchall()
     
     cursor.execute('''
@@ -103,6 +120,7 @@ def organization():
     conn.close()
     return render_template('organization.html', departments=departments, positions=positions)
 
+
 @app.route('/add_department', methods=['GET', 'POST'])
 def add_department():
     conn = get_db()
@@ -110,16 +128,30 @@ def add_department():
 
     if request.method == 'POST':
         name = request.form['department_name']
-        cursor.execute('INSERT INTO department (name) VALUES (?)', (name,))
+        leader_id = request.form['leader_id']  # Leader selection from form
+
+        # Insert the new department with the selected leader
+        cursor.execute('INSERT INTO department (name, leader_id) VALUES (?, ?)', (name, leader_id))
         conn.commit()
         return redirect(url_for('add_department'))
 
-    # Fetch all departments to display them before the form
-    cursor.execute('SELECT dept_id, name FROM department')
-    departments = cursor.fetchall()  # Get all department records
+    # Fetch all departments along with their leaders
+    cursor.execute('''
+        SELECT d.dept_id, d.name, e.emp_name
+        FROM department d
+        LEFT JOIN employee e ON d.leader_id = e.emp_id
+    ''')
+    departments = cursor.fetchall()
+
+    # Fetch all employees to display in the leader selection dropdown
+    cursor.execute('SELECT emp_id, emp_name FROM employee WHERE emp_id NOT IN (SELECT leader_id FROM department WHERE leader_id IS NOT NULL)')
+    employees = cursor.fetchall()
 
     conn.close()
-    return render_template('add_department.html', departments=departments)
+
+    # Pass the departments and employees to the template
+    return render_template('add_department.html', departments=departments, employees=employees)
+
 
 @app.route('/edit_department/<int:dept_id>', methods=['GET', 'POST'])
 def edit_department(dept_id):
@@ -128,29 +160,28 @@ def edit_department(dept_id):
 
     if request.method == 'POST':
         department_name = request.form['department_name']
+        leader_id = request.form['leader_id'] if request.form['leader_id'] else None
 
-        # Check if this department is associated with any positions
-        cursor.execute('SELECT COUNT(*) FROM position WHERE dept_id = ?', (dept_id,))
-        position_count = cursor.fetchone()[0]
-
-        if position_count > 0:
-            # If positions are associated, do not allow update
-            flash('Cannot update department because it is associated with existing positions.')
-            conn.close()
-            return redirect(url_for('add_department'))
-
-        # Update the department's name if no positions are associated
-        cursor.execute('UPDATE department SET name = ? WHERE dept_id = ?', (department_name, dept_id))
+        # Update the department's name and leader
+        cursor.execute('UPDATE department SET name = ?, leader_id = ? WHERE dept_id = ?', (department_name, leader_id, dept_id))
         conn.commit()
-        conn.close()
         return redirect(url_for('add_department'))
 
     # GET request: Fetch the department details
-    cursor.execute('SELECT dept_id, name FROM department WHERE dept_id = ?', (dept_id,))
+    cursor.execute('SELECT dept_id, name, leader_id FROM department WHERE dept_id = ?', (dept_id,))
     department = cursor.fetchone()
 
+    # Fetch all employees (excluding current leaders or the current leader of this department)
+    cursor.execute('''
+        SELECT emp_id, emp_name FROM employee
+        WHERE emp_id NOT IN (SELECT leader_id FROM department WHERE leader_id IS NOT NULL AND leader_id != ?)
+        OR emp_id = ?
+    ''', (department[2], department[2]))
+    employees = cursor.fetchall()
+
     conn.close()
-    return render_template('edit_department.html', department=department)
+    return render_template('edit_department.html', department=department, employees=employees)
+
 
 @app.route('/delete_department/<int:dept_id>', methods=['POST'])
 def delete_department(dept_id):
@@ -925,6 +956,184 @@ def payroll():
     conn.close()
 
     return render_template('my_payroll.html', payroll_data=payroll_data)
+
+
+@app.route('/add_teams', methods=['GET', 'POST'])
+def add_teams():
+    conn = get_db()
+    cursor = conn.cursor()
+
+    if request.method == 'POST':
+        team_name = request.form['team_name']
+        department_id = request.form['department_id']
+        team_leader_id = request.form['leader_id']
+
+        # Insert the new team into the team table
+        cursor.execute('''
+            INSERT INTO team (team_name, dept_id, leader_id) 
+            VALUES (?, ?, ?)
+        ''', (team_name, department_id, team_leader_id))
+
+        # Update the employee to reflect their new team leader role
+        if team_leader_id:
+            cursor.execute('UPDATE employee SET is_leader = 1 WHERE emp_id = ?', (team_leader_id,))
+
+        conn.commit()
+        conn.close()
+        return redirect(url_for('add_teams'))
+
+    # Fetch departments for selection
+    cursor.execute('SELECT dept_id, name FROM department')
+    departments = cursor.fetchall()
+
+    # Fetch employees who are not yet team leaders
+    cursor.execute('''
+        SELECT emp_id, emp_name FROM employee
+        WHERE emp_id NOT IN (SELECT leader_id FROM team WHERE leader_id IS NOT NULL)
+    ''')
+    employees = cursor.fetchall()
+
+    conn.close()
+
+    return render_template('add_teams.html', departments=departments, employees=employees)
+
+
+@app.route('/teams')
+def teams():
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Fetch teams with their departments and leaders
+    cursor.execute('''
+        SELECT t.team_id, t.team_name, d.name AS department_name, e.emp_name AS leader_name
+        FROM team t
+        LEFT JOIN department d ON t.dept_id = d.dept_id
+        LEFT JOIN employee e ON t.leader_id = e.emp_id
+    ''')
+    teams = cursor.fetchall()
+
+    conn.close()
+
+    return render_template('teams.html', teams=teams)
+
+
+@app.route('/add_employee_to_team/<int:team_id>', methods=['GET', 'POST'])
+def add_employee_to_team(team_id):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    if request.method == 'POST':
+        emp_id = request.form['emp_id']
+        
+        # Update the employee's team in the employee table
+        cursor.execute('UPDATE employee SET team_id = ? WHERE emp_id = ?', (team_id, emp_id))
+        
+        conn.commit()
+        conn.close()
+        return redirect(url_for('view_team', team_id=team_id))
+
+    # Fetch the team details
+    cursor.execute('SELECT team_id, team_name FROM team WHERE team_id = ?', (team_id,))
+    team = cursor.fetchone()
+
+    # Fetch employees who are not assigned to a team
+    cursor.execute('SELECT emp_id, emp_name FROM employee WHERE team_id IS NULL')
+    employees = cursor.fetchall()
+
+    # Fetch employees currently assigned to this team
+    cursor.execute('''
+        SELECT e.emp_id, e.emp_name 
+        FROM employee e
+        WHERE e.team_id = ?
+    ''', (team_id,))
+    team_employees = cursor.fetchall()
+
+    conn.close()
+    
+    return render_template('add_employee_to_team.html', team=team, employees=employees, team_employees=team_employees)
+
+
+@app.route('/view_team/<int:team_id>')
+def view_team(team_id):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Fetch the team details
+    cursor.execute('''
+        SELECT t.team_id, t.team_name, d.name AS department_name, e.emp_name AS leader_name
+        FROM team t
+        LEFT JOIN department d ON t.department_id = d.dept_id
+        LEFT JOIN employee e ON t.team_leader_id = e.emp_id
+        WHERE t.team_id = ?
+    ''', (team_id,))
+    team = cursor.fetchone()
+
+    # Fetch employees assigned to this team
+    cursor.execute('''
+        SELECT e.emp_id, e.emp_name
+        FROM employee e
+        WHERE e.team_id = ?
+    ''', (team_id,))
+    employees = cursor.fetchall()
+
+    conn.close()
+
+    return render_template('view_team.html', team=team, employees=employees)
+
+
+@app.route('/delete_team/<int:team_id>', methods=['POST'])
+def delete_team(team_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Delete the team
+    cursor.execute('DELETE FROM team WHERE team_id = ?', (team_id,))
+    
+    conn.commit()
+    conn.close()
+    
+    flash('Team deleted successfully!')
+    return redirect(url_for('teams'))
+
+
+@app.route('/edit_team/<int:team_id>', methods=['GET', 'POST'])
+def edit_team(team_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    if request.method == 'POST':
+        team_name = request.form['team_name']
+        department_id = request.form['department_id']
+        team_leader_id = request.form['team_leader_id']
+        
+        # Update the team with the new details
+        cursor.execute('''
+            UPDATE team
+            SET team_name = ?, dept_id = ?, leader_id = ?
+            WHERE team_id = ?
+        ''', (team_name, department_id, team_leader_id, team_id))
+        
+        conn.commit()
+        conn.close()
+        
+        flash('Team updated successfully!')
+        return redirect(url_for('teams'))
+    
+    # GET request: Fetch the current team details to display in the form
+    cursor.execute('SELECT team_id, team_name, dept_id, leader_id FROM team WHERE team_id = ?', (team_id,))
+    team = cursor.fetchone()
+    
+    # Fetch the list of departments and employees for dropdowns
+    cursor.execute('SELECT dept_id, name FROM department')
+    departments = cursor.fetchall()
+    
+    cursor.execute('SELECT emp_id, emp_name FROM employee WHERE emp_id NOT IN (SELECT leader_id FROM team WHERE leader_id IS NOT NULL) OR emp_id = ?', (team[3],))
+    employees = cursor.fetchall()
+    
+    conn.close()
+    
+    return render_template('edit_teams.html', team=team, departments=departments, employees=employees)
+
 
 #ideas
 # # Route for Attendance Record

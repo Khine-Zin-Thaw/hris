@@ -3,7 +3,6 @@
 {% block content %}
 <div class="container">
     <div>
-        <h1 class="header">People Link</h1>
         <div class="slider">
             <!-- Navigation dots -->
             <input type="radio" name="slider" class="slider__nav" id="nav1" checked>
@@ -118,7 +117,7 @@
                 </a>
             </div>
             <div class="icon-box">
-                <a href="contact_hr.html">
+                <a href="{{ url_for('contact_us') }}">
                     <div class="circle-icon">
                         <img src="{{ url_for('static', filename='assets/img/elements/7.jpg') }}" alt="HR Icon">
                     </div>

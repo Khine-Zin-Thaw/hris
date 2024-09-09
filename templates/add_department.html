@@ -4,6 +4,8 @@
 
 <div class="container-xxl flex-grow-1 container-p-y">
   <h4 class="fw-bold py-3 mb-4"><span class="text-muted fw-light">Organization management/</span>Department management</h4>
+
+  <!-- Departments Table -->
   <div class="card mb-4">
     <h5 class="card-header">Departments</h5>
     <div class="table-responsive text-nowrap">
@@ -12,6 +14,7 @@
                 <tr>
                     <th>Department ID</th>
                     <th>Name</th>
+                    <th>Leader</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -20,21 +23,25 @@
                 <tr>
                     <td>{{ department[0] }}</td>
                     <td>{{ department[1] }}</td>
+                    <td>{{ department[2] if department[2] else 'None' }}</td> <!-- Display leader name or "None" -->
                     <td>
-                      <!-- Edit button -->
-                      <a href="{{ url_for('edit_department', dept_id=department[0]) }}" class="btn btn-warning btn-sm me-1">Edit</a>
-                      
-                      <!-- Delete button -->
-                      <form action="{{ url_for('delete_department', dept_id=department[0]) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this department?');">
-                          <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                      </form>
-                  </td>  
+                        <!-- Edit button -->
+                        <a href="{{ url_for('edit_department', dept_id=department[0]) }}" class="btn btn-warning btn-sm me-1">Edit</a>
+
+                        <!-- Delete button -->
+                        <form action="{{ url_for('delete_department', dept_id=department[0]) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this department?');">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-  </div>
+</div>
+
+
+  <!-- Flash messages -->
   {% with messages = get_flashed_messages() %}
   {% if messages %}
       <div class="alert alert-danger">
@@ -43,9 +50,10 @@
           {% endfor %}
       </div>
   {% endif %}
-{% endwith %}
-    <!-- Basic with Icons -->
-    <div class="row">
+  {% endwith %}
+
+  <!-- Add Department Form -->
+  <div class="row">
       <div class="col-md-8 mx-auto">
         <div class="card mb-4">
           <div class="card-header d-flex align-items-center justify-content-between">
@@ -53,6 +61,7 @@
           </div>
           <div class="card-body">
             <form method="POST" action="{{ url_for('add_department') }}">
+              <!-- Department Name -->
               <div class="row mb-3">
                 <label class="col-sm-2 col-form-label" for="department_name">Department Name</label>
                 <div class="col-sm-10">
@@ -71,6 +80,26 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Department Leader -->
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label" for="leader_id">Department Leader</label>
+                <div class="col-sm-10">
+                  <div class="input-group">
+                    <span class="input-group-text">
+                      <i class="bx bx-user"></i>
+                    </span>
+                    <select class="form-control" id="leader_id" name="leader_id">
+                      <option value="">None</option>
+                      {% for emp in employees %}
+                      <option value="{{ emp[0] }}">{{ emp[1] }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Submit and Return buttons -->
               <div class="row justify-content-end">
                 <div class="col-sm-10">
                   <button type="submit" class="btn btn-primary">Submit</button>

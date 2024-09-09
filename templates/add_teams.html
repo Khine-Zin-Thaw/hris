@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-xxl flex-grow-1 container-p-y">
+    <h4 class="fw-bold py-3 mb-4">
+        <span class="text-muted fw-light">Organization Management /</span> Team Management
+    </h4>
+
+    <!-- Add Team Form -->
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card mb-4">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5 class="card-title">Create New Team</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('add_teams') }}">  <!-- Corrected action URL to match backend route -->
+                        <!-- Team Name -->
+                        <div class="mb-3">
+                            <label for="team_name" class="form-label">Team Name</label>
+                            <input type="text" id="team_name" name="team_name" class="form-control" placeholder="Enter Team Name" required>
+                        </div>
+
+                        <!-- Department Selection -->
+                        <div class="mb-3">
+                            <label for="department_id" class="form-label">Department</label>
+                            <select id="department_id" name="department_id" class="form-control" required>
+                                <option value="">Select Department</option>
+                                {% for department in departments %}
+                                <option value="{{ department[0] }}">{{ department[1] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Team Leader Selection -->
+                        <div class="mb-3">
+                            <label for="leader_id" class="form-label">Team Leader</label>
+                            <select id="leader_id" name="leader_id" class="form-control">
+                                <option value="">None</option>
+                                {% for emp in employees %}
+                                <option value="{{ emp[0] }}">{{ emp[1] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Submit and Return Buttons -->
+                        <button type="submit" class="btn btn-primary">Create Team</button>
+                        <a href="{{ url_for('add_department') }}" class="btn btn-secondary">Return to Department Management</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

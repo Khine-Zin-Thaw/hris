@@ -8,14 +8,27 @@
     </h4>
 
     <form action="{{ url_for('edit_department', dept_id=department[0]) }}" method="POST">
+        <!-- Department Name Input -->
         <div class="mb-3">
             <label for="department_name" class="form-label">Department Name</label>
             <input type="text" id="department_name" name="department_name" class="form-control" value="{{ department[1] }}" required>
         </div>
+
+        <!-- Department Leader Dropdown -->
+        <div class="mb-3">
+            <label for="leader_id" class="form-label">Department Leader</label>
+            <select class="form-control" id="leader_id" name="leader_id">
+                <option value="">None</option>
+                {% for emp in employees %}
+                <option value="{{ emp[0] }}" {% if emp[0] == department[2] %}selected{% endif %}>{{ emp[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Submit and Return Buttons -->
         <button type="submit" class="btn btn-primary">Update Department</button>
         <a href="{{ url_for('add_department') }}" class="btn btn-secondary">Return to Department Management</a>
     </form>
 </div>
-
 
 {% endblock %}

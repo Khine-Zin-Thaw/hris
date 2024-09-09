@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-xxl flex-grow-1 container-p-y">
+    <h4 class="fw-bold py-3 mb-4">
+        <span class="text-muted fw-light">Team Management /</span> {{ team[1] }}
+    </h4>
+
+    <!-- Team Details -->
+    <div class="card mb-4">
+        <h5 class="card-header">Team Details</h5>
+        <div class="table-responsive text-nowrap">
+            <table class="table">
+                <tbody>
+                    <tr>
+                        <th>Team Name</th>
+                        <td>{{ team[1] }}</td>
+                    </tr>
+                    <tr>
+                        <th>Department</th>
+                        <td>{{ team[2] }}</td>
+                    </tr>
+                    <tr>
+                        <th>Leader</th>
+                        <td>{{ team[3] if team[3] else 'None' }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Employees Assigned to the Team -->
+    <div class="card mb-4">
+        <h5 class="card-header">Employees in {{ team[1] }}</h5>
+        <div class="table-responsive text-nowrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Employee Name</th>
+                    </tr>
+                </thead>
+                <tbody class="table-border-bottom-0">
+                    {% for emp in employees %}
+                    <tr>
+                        <td>{{ emp[0] }}</td>
+                        <td>{{ emp[1] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add Employee Button -->
+    <a href="{{ url_for('add_employee_to_team', team_id=team[0]) }}" class="btn btn-primary">Add Employee</a>
+</div>
+
+{% endblock %}
