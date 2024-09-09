@@ -23,36 +23,54 @@ def init_db():
         FOREIGN KEY (dept_id) REFERENCES department (dept_id)
     )
     ''')
-    
-    # Create position table
-cursor.execute('''
-    CREATE TABLE team (
-    team_id INTEGER PRIMARY KEY,
-    team_name TEXT NOT NULL,
-    dept_id INTEGER,
-    leader_id INTEGER,
-    FOREIGN KEY (dept_id) REFERENCES department(dept_id),
-    FOREIGN KEY (leader_id) REFERENCES employee(emp_id)
-);
-    ''')
 
+    # Create team table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS team (
+        team_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        team_name TEXT NOT NULL,
+        dept_id INTEGER,
+        leader_id INTEGER,
+        FOREIGN KEY (dept_id) REFERENCES department(dept_id),
+        FOREIGN KEY (leader_id) REFERENCES employee(emp_id)
+    )
+    ''')
 
     # Create employee table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS employee (
         emp_id INTEGER PRIMARY KEY AUTOINCREMENT,
         emp_name TEXT NOT NULL,
-        department TEXT NOT NULL,
+        dept_id INTEGER NOT NULL,
         job_status TEXT NOT NULL,
         gender TEXT NOT NULL,
         termination_date DATE,
         employee_status TEXT NOT NULL,
         join_date DATE NOT NULL,
         pos_id INTEGER NOT NULL,
-        FOREIGN KEY (pos_id) REFERENCES position (pos_id)
+        FOREIGN KEY (pos_id) REFERENCES position (pos_id),
+        FOREIGN KEY (dept_id) REFERENCES department (dept_id)
     )
     ''')
-    
+
+    # Create career table to track employee career changes
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS career (
+        career_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        emp_id INTEGER NOT NULL,
+        pos_id INTEGER,
+        dept_id INTEGER,
+        team_id INTEGER,
+        status TEXT NOT NULL,  -- Promotion, Demotion, Transfer, etc.
+        start_date DATE NOT NULL,
+        end_date DATE,
+        FOREIGN KEY (emp_id) REFERENCES employee (emp_id),
+        FOREIGN KEY (pos_id) REFERENCES position (pos_id),
+        FOREIGN KEY (dept_id) REFERENCES department (dept_id),
+        FOREIGN KEY (team_id) REFERENCES team (team_id)
+    )
+    ''')
+
     # Create payroll table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS payroll (
@@ -70,7 +88,7 @@ cursor.execute('''
         FOREIGN KEY (emp_id) REFERENCES employee (emp_id)
     )
     ''')
-    
+
     # Create payroll_archive table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS payroll_archive (
@@ -101,23 +119,23 @@ cursor.execute('''
     )
     ''')
 
-    # Create users table
+    # Create users table for employee logins
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS users (
         user_id INTEGER PRIMARY KEY AUTOINCREMENT,
         emp_id INTEGER NOT NULL,
-        password BLOB NOT NULL,  -- Changed to BLOB for storing hashed passwords
+        password BLOB NOT NULL,  -- Hashed password
         role TEXT CHECK(role IN ('manager', 'recruit_admin', 'payroll_admin', 'staff')) NOT NULL,
         FOREIGN KEY (emp_id) REFERENCES employee (emp_id)
     )
     ''')
-    
-    # Create payroll_settings table
+
+    # Create payroll_settings table for default payroll settings
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS payroll_settings (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        tax_percentage REAL DEFAULT 3.0,  -- Default tax percentage is 3%
-        default_ssb REAL DEFAULT 6000.0  -- Default SSB amount is 6000
+        tax_percentage REAL DEFAULT 3.0,  -- Default tax percentage
+        default_ssb REAL DEFAULT 6000.0   -- Default SSB amount
     )
     ''')
 
@@ -135,11 +153,11 @@ cursor.execute('''
 
     # Insert default employees
     cursor.execute('''
-    INSERT OR IGNORE INTO employee (emp_name, department, job_status, gender, termination_date, employee_status, join_date, pos_id) VALUES
-    ('John Doe', 'HR', 'Active', 'Male', NULL, 'Active', '2022-01-01', 1),
-    ('Jane Smith', 'Engineering', 'Active', 'Female', NULL, 'Active', '2022-02-01', 2),
-    ('Emily Johnson', 'Marketing', 'Active', 'Female', NULL, 'Active', '2022-03-01', 3),
-    ('Payroll', 'Marketing', 'Active', 'Female', NULL, 'Active', '2022-03-01', 3)
+    INSERT OR IGNORE INTO employee (emp_name, dept_id, job_status, gender, termination_date, employee_status, join_date, pos_id) VALUES
+    ('John Doe', 1, 'Active', 'Male', NULL, 'Active', '2022-01-01', 1),
+    ('Jane Smith', 2, 'Active', 'Female', NULL, 'Active', '2022-02-01', 2),
+    ('Emily Johnson', 3, 'Active', 'Female', NULL, 'Active', '2022-03-01', 3),
+    ('Payroll Admin', 3, 'Active', 'Female', NULL, 'Active', '2022-03-01', 3)
     ''')
 
     # Insert default users with hashed passwords
@@ -147,7 +165,7 @@ cursor.execute('''
         ('John Doe', 'password123', 'manager'),
         ('Jane Smith', 'password123', 'staff'),
         ('Emily Johnson', 'password123', 'recruit_admin'),
-        ('Payroll', 'password123', 'payroll_admin')
+        ('Payroll Admin', 'password123', 'payroll_admin')
     ]
 
     for emp_name, plain_password, role in users:

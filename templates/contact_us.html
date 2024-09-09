@@ -1,66 +1,63 @@
 {% extends "userbase.html" %}
 
 {% block content %}
-    <!-- Our teams are here to help section -->
-    <section class="contact-us">
-        <h1>Our teams are here to help</h1>
-        <div class="support-sections">
-            <div class="support-card">
-                <img src="tech-support.jpg" alt="Technical Support">
-                <h3>Technical support</h3>
-                <p>Already using our products and experiencing technical issues?</p>
-                <a href="#">Find helpful resources</a>
-            </div>
+<div class="container-xxl flex-grow-1 container-p-y">
+    <h1 class="fw-bold py-3 mb-4 text-center">People Link</h1>
 
-            <div class="support-card">
-                <img src="pricing-support.jpg" alt="Pricing, billing & licensing">
-                <h3>Pricing, billing & licensing</h3>
-                <p>Have a pricing question or need help managing your account?</p>
-                <a href="#">Find answers</a>
-            </div>
-
-            <div class="support-card">
-                <img src="product-advice.jpg" alt="Product Advice">
-                <h3>Product advice</h3>
-                <p>Evaluating our products and need advice before you buy?</p>
-                <a href="#">View product demos</a>
+    <!-- HR Teams Section -->
+    <div class="row text-center">
+        <h2>Our HR Teams</h2>
+        <div class="col-md-12 mb-4">
+            <div class="row">
+                {% for team in hr_teams %}
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ team.leader_name }}</h5>
+                            <p class="card-text">{{ team.position }}</p>
+                            <p>Email: {{ team.email }}</p>
+                            <p>Phone: {{ team.phone }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- Our offices around the world section -->
-    <section class="our-offices">
-        <h1>Our offices around the world</h1>
-        <p>We are a truly global team with offices in amazing cities. Explore the world of [Your Company Name].</p>
+    <!-- Feedback Form Section -->
+    <div class="row mt-5">
+        <div class="col-md-8 mx-auto">
+            <h2 class="text-center">Submit Your Problem to HR</h2>
+            <form method="POST" action="{{ url_for('submit_feedback') }}">
+                <!-- Staff Name -->
+                <div class="form-group mb-3">
+                    <label for="staff_name" class="form-label">Your Name</label>
+                    <input type="text" class="form-control" id="staff_name" name="staff_name" required>
+                </div>
 
-        <div class="office-locations">
-            <div class="office">
-                <h3>Sydney (Global HQ)</h3>
-                <p>Level 6, 341 George Street, Sydney, NSW 2000, Australia</p>
-                <a href="tel:+61292621443">+61 2 9262 1443</a><br>
-                <a href="#">Get directions ➔</a>
-            </div>
+                <!-- Problem Description -->
+                <div class="form-group mb-3">
+                    <label for="problem_description" class="form-label">Describe Your Problem</label>
+                    <textarea class="form-control" id="problem_description" name="problem_description" rows="4" required></textarea>
+                </div>
 
-            <div class="office">
-                <h3>Bengaluru</h3>
-                <p>3rd Floor, Sunriver, Wework, Embassy Golf Links Business Park, Domlur, Bangalore - 560071</p>
-                <a href="tel:+918037012649">+91 80 37012649</a><br>
-                <a href="#">Get directions ➔</a>
-            </div>
+                <!-- HR Team Selection -->
+                <div class="form-group mb-3">
+                    <label for="team_id" class="form-label">Select HR Team</label>
+                    <select class="form-control" id="team_id" name="team_id" required>
+                        {% for team in hr_teams %}
+                        <option value="{{ team.team_id }}">{{ team.leader_name }}'s Team</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <div class="office">
-                <h3>Manila</h3>
-                <p>2nd Floor B3, Bonifacio High Street, Taguig, Metro Manila 1634, Philippines</p>
-                <a href="tel:+63277557700">+63 2 7755 7700</a><br>
-                <a href="#">Get directions ➔</a>
-            </div>
-
-            <div class="office">
-                <h3>Yokohama</h3>
-                <p>Landmark Tower, Suite 1407, 2-2-1 Minatomirai, Nishi-ku Yokohama, Kanagawa 220-8114 Japan</p>
-                <a href="tel:+81453309080">+81 45 330 9080</a><br>
-                <a href="#">Get directions ➔</a>
-            </div>
+                <!-- Submit Button -->
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary">Submit Feedback</button>
+                </div>
+            </form>
         </div>
-    </section>
-    {% endblock %}
+    </div>
+</div>
+{% endblock %}

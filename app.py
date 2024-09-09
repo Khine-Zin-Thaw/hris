@@ -97,29 +97,6 @@ def create_user():
 
     return render_template('create_user.html')
 
-@app.route('/organization')
-def organization():
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    # Select department with the leader details
-    cursor.execute('''
-        SELECT d.dept_id, d.name, e.emp_name AS leader_name
-        FROM department d
-        LEFT JOIN employee e ON d.leader_id = e.emp_id
-    ''')
-    departments = cursor.fetchall()
-    
-    cursor.execute('''
-        SELECT p.pos_id, p.position_name, d.name AS department, p.basic_salary
-        FROM position p
-        JOIN department d ON p.dept_id = d.dept_id
-    ''')
-    positions = cursor.fetchall()
-    
-    conn.close()
-    return render_template('organization.html', departments=departments, positions=positions)
-
 
 @app.route('/add_department', methods=['GET', 'POST'])
 def add_department():
@@ -128,11 +105,24 @@ def add_department():
 
     if request.method == 'POST':
         name = request.form['department_name']
-        leader_id = request.form['leader_id']  # Leader selection from form
+        leader_id = request.form.get('leader_id')  # Use .get() to handle missing values
 
-        # Insert the new department with the selected leader
-        cursor.execute('INSERT INTO department (name, leader_id) VALUES (?, ?)', (name, leader_id))
-        conn.commit()
+        try:
+            # Insert the new department with the selected leader (or NULL if no leader is selected)
+            cursor.execute('INSERT INTO department (name, leader_id) VALUES (?, ?)', (name, leader_id if leader_id else None))
+
+            # Update the employee table to set the selected leader as a department leader
+            if leader_id:
+                cursor.execute('UPDATE employee SET is_dept_leader = 1 WHERE emp_id = ?', (leader_id,))
+
+            conn.commit()
+            flash('Department added successfully!')
+        except Exception as e:
+            conn.rollback()  # Rollback in case of error
+            flash(f'Error adding department: {e}')
+        finally:
+            conn.close()
+
         return redirect(url_for('add_department'))
 
     # Fetch all departments along with their leaders
@@ -160,11 +150,33 @@ def edit_department(dept_id):
 
     if request.method == 'POST':
         department_name = request.form['department_name']
-        leader_id = request.form['leader_id'] if request.form['leader_id'] else None
+        new_leader_id = request.form['leader_id'] if request.form.get('leader_id') else None
 
-        # Update the department's name and leader
-        cursor.execute('UPDATE department SET name = ?, leader_id = ? WHERE dept_id = ?', (department_name, leader_id, dept_id))
-        conn.commit()
+        try:
+            # Get the current leader's ID (before the update)
+            cursor.execute('SELECT leader_id FROM department WHERE dept_id = ?', (dept_id,))
+            current_leader_id = cursor.fetchone()[0]
+
+            # Update the department's name and leader
+            cursor.execute('UPDATE department SET name = ?, leader_id = ? WHERE dept_id = ?', (department_name, new_leader_id, dept_id))
+
+            # Update the employee table
+            # 1. Remove the `is_dept_leader` flag from the previous leader
+            if current_leader_id:
+                cursor.execute('UPDATE employee SET is_dept_leader = 0 WHERE emp_id = ?', (current_leader_id,))
+
+            # 2. Set the `is_dept_leader` flag for the new leader
+            if new_leader_id:
+                cursor.execute('UPDATE employee SET is_dept_leader = 1 WHERE emp_id = ?', (new_leader_id,))
+
+            conn.commit()
+            flash('Department updated successfully!')
+        except Exception as e:
+            conn.rollback()
+            flash(f'Error updating department: {e}')
+        finally:
+            conn.close()
+
         return redirect(url_for('add_department'))
 
     # GET request: Fetch the department details
@@ -188,20 +200,25 @@ def delete_department(dept_id):
     conn = get_db()
     cursor = conn.cursor()
 
-    # Check if there are any positions associated with the department
-    cursor.execute('SELECT COUNT(*) FROM position WHERE dept_id = ?', (dept_id,))
-    position_count = cursor.fetchone()[0]
+    try:
+        # Check if there are any positions associated with the department
+        cursor.execute('SELECT COUNT(*) FROM position WHERE dept_id = ?', (dept_id,))
+        position_count = cursor.fetchone()[0]
 
-    if position_count > 0:
-        flash('Cannot delete department as there are positions associated with it.')
+        if position_count > 0:
+            flash('Cannot delete department as there are positions associated with it.')
+            return redirect(url_for('add_department'))
+
+        # If no positions are associated, delete the department
+        cursor.execute('DELETE FROM department WHERE dept_id = ?', (dept_id,))
+        conn.commit()
+        flash('Department deleted successfully!')
+    except Exception as e:
+        conn.rollback()
+        flash(f'Error deleting department: {e}')
+    finally:
         conn.close()
-        return redirect(url_for('add_department'))
 
-    # If no positions are associated, delete the department
-    cursor.execute('DELETE FROM department WHERE dept_id = ?', (dept_id,))
-    conn.commit()
-    conn.close()
-    flash('Department deleted successfully!')
     return redirect(url_for('add_department'))
 
 
@@ -209,6 +226,11 @@ def delete_department(dept_id):
 def add_position():
     conn = get_db()
     cursor = conn.cursor()
+
+    # Check if the user is a manager
+    if session.get('role') != 'manager':
+        flash('You do not have permission to add positions.')
+        return redirect(url_for('index'))
 
     if request.method == 'POST':
         position_name = request.form.get('position_name')
@@ -220,48 +242,46 @@ def add_position():
             flash('All fields are required!')
             return redirect(url_for('add_position'))
 
+        # Validate that basic_salary is numeric
         try:
+            basic_salary = float(basic_salary)
+            if basic_salary <= 0:
+                raise ValueError
+        except ValueError:
+            flash('Basic salary must be a positive number!')
+            return redirect(url_for('add_position'))
+
+        try:
+            # Automatically fetch the team_id based on the selected department
+            cursor.execute('SELECT team_id FROM department WHERE dept_id = ?', (department_id,))
+            team_id = cursor.fetchone()[0]
+
             # Insert new position into the database
             cursor.execute('''
-                INSERT INTO position (position_name, dept_id, basic_salary)
-                VALUES (?, ?, ?)
-            ''', (position_name, department_id, basic_salary))
+                INSERT INTO position (position_name, dept_id, team_id, basic_salary)
+                VALUES (?, ?, ?, ?)
+            ''', (position_name, department_id, team_id, basic_salary))
             conn.commit()
             flash('Position added successfully!')
 
-            # Update payroll table (if needed)
-            cursor.execute('''
-                UPDATE payroll
-                SET basic_salary = ?
-                WHERE emp_id IN (
-                    SELECT emp_id
-                    FROM employee
-                    WHERE pos_id = (
-                        SELECT pos_id
-                        FROM position
-                        WHERE position_name = ?
-                    )
-                )
-            ''', (basic_salary, position_name))
-            conn.commit()
-
         except sqlite3.Error as e:
+            conn.rollback()  # Rollback in case of error
             flash(f'An error occurred: {e}')
-            return redirect(url_for('add_position'))
-
         finally:
             conn.close()
+
         return redirect(url_for('add_position'))
 
-    # Fetch all departments for the form dropdown
+    # Fetch all departments for the form dropdowns
     cursor.execute('SELECT dept_id, name FROM department')
     departments = cursor.fetchall()
 
     # Fetch all positions to display in the table
     cursor.execute('''
-        SELECT p.pos_id, p.position_name, d.name, p.basic_salary
+        SELECT p.pos_id, p.position_name, d.name AS department_name, t.team_name, p.basic_salary
         FROM position p
-        JOIN department d ON p.dept_id = d.dept_id
+        LEFT JOIN department d ON p.dept_id = d.dept_id
+        LEFT JOIN team t ON p.team_id = t.team_id
     ''')
     positions = cursor.fetchall()
 
@@ -280,21 +300,28 @@ def edit_position(pos_id):
         department_id = request.form['department']
         basic_salary = request.form['basic_salary']
         
-        # Update the position's details
-        cursor.execute('''
-        UPDATE position
-        SET position_name = ?, dept_id = ?, basic_salary = ?
-        WHERE pos_id = ?
-        ''', (position_name, department_id, basic_salary, pos_id))
-        conn.commit()
+        try:
+            # Automatically fetch the team_id based on the selected department
+            cursor.execute('SELECT team_id FROM department WHERE dept_id = ?', (department_id,))
+            team_id = cursor.fetchone()[0]
 
-        # You can update related tables as necessary, like the payroll table
-        # ...
+            # Update the position's details
+            cursor.execute('''
+            UPDATE position
+            SET position_name = ?, dept_id = ?, team_id = ?, basic_salary = ?
+            WHERE pos_id = ?
+            ''', (position_name, department_id, team_id, basic_salary, pos_id))
+            conn.commit()
 
-        conn.close()
+        except Exception as e:
+            conn.rollback()
+            flash(f'An error occurred: {e}')
+        finally:
+            conn.close()
+
         return redirect(url_for('add_position'))
 
-    # GET request: Fetch the current position details and list of departments
+    # GET request: Fetch the current position details, and list of departments
     cursor.execute('SELECT pos_id, position_name, dept_id, basic_salary FROM position WHERE pos_id = ?', (pos_id,))
     position = cursor.fetchone()
 
@@ -472,22 +499,27 @@ def add_users():
 def myinfo():
     if 'role' not in session:
         return redirect(url_for('login'))
-    
+
     conn = get_db()
     cursor = conn.cursor()
     emp_id = session.get('emp_id')  # Assuming emp_id is stored in the session
+
+    # Fetch employee information along with department and team details
     cursor.execute('''
-            SELECT e.emp_id, e.emp_name, p.position_name, e.job_status, e.gender, e.termination_date, e.employee_status, e.join_date, d.name AS department_name
-            FROM employee e
-            JOIN position p ON e.pos_id = p.pos_id
-            JOIN department d ON p.dept_id = d.dept_id
-            WHERE e.emp_id = ?
+        SELECT e.emp_id, e.emp_name, p.position_name, e.job_status, e.gender, e.termination_date, 
+               e.employee_status, e.join_date, d.name AS department_name, t.team_name
+        FROM employee e
+        JOIN position p ON e.pos_id = p.pos_id
+        JOIN department d ON p.dept_id = d.dept_id
+        LEFT JOIN team t ON d.team_id = t.team_id  -- Joining the team table to get team details
+        WHERE e.emp_id = ?
     ''', (emp_id,))
     employees = cursor.fetchall()
-    conn = get_db()
-    cursor = conn.cursor()
+
+    # Fetch positions for display in the template (if needed)
     cursor.execute('SELECT pos_id, position_name FROM position')
     positions = cursor.fetchall()
+
     conn.close()
 
     return render_template('myinfo.html', positions=positions, employees=employees)
@@ -501,10 +533,12 @@ def add_employee():
     conn = get_db()
     cursor = conn.cursor()
 
-    if session['role'] == 'staff':
-        emp_id = session.get('emp_id')  # Assuming emp_id is stored in the session
+    # Fetch employee data based on the user's role
+    emp_id = session.get('emp_id')  # Assuming emp_id is stored in the session
+    if session.get('role') == 'staff':
         cursor.execute('''
-            SELECT e.emp_id, e.emp_name, p.position_name, e.job_status, e.gender, e.termination_date, e.employee_status, e.join_date, d.name AS department_name
+            SELECT e.emp_id, e.emp_name, p.position_name, e.job_status, e.gender, e.termination_date, 
+                   e.employee_status, e.join_date, d.name AS department_name
             FROM employee e
             JOIN position p ON e.pos_id = p.pos_id
             JOIN department d ON p.dept_id = d.dept_id
@@ -512,7 +546,8 @@ def add_employee():
         ''', (emp_id,))
     else:
         cursor.execute('''
-            SELECT e.emp_id, e.emp_name, p.position_name, e.job_status, e.gender, e.termination_date, e.employee_status, e.join_date, d.name AS department_name
+            SELECT e.emp_id, e.emp_name, p.position_name, e.job_status, e.gender, e.termination_date, 
+                   e.employee_status, e.join_date, d.name AS department_name
             FROM employee e
             JOIN position p ON e.pos_id = p.pos_id
             JOIN department d ON p.dept_id = d.dept_id
@@ -521,55 +556,68 @@ def add_employee():
     employees = cursor.fetchall()
 
     if request.method == 'POST':
-        # Handle form submission and add employee
-        emp_name = request.form['emp_name']
-        position_id = request.form['position']
-        job_status = request.form['job_status']
-        gender = request.form['gender']
-        termination_date = request.form['termination_date']
-        join_date = request.form['join_date']
-        employee_status = request.form['employee_status']
+        # Capture form data
+        emp_name = request.form.get('emp_name')
+        email = request.form.get('email')
+        phone = request.form.get('phone')
+        position_id = request.form.get('position')
+        job_status = request.form.get('job_status')
+        gender = request.form.get('gender')
+        termination_date = request.form.get('termination_date') or None  # Handle optional field
+        join_date = request.form.get('join_date')
+        employee_status = request.form.get('employee_status')
 
-        # Get the position details including the department and basic salary
-        cursor.execute('''
-            SELECT position_name, dept_id, basic_salary
-            FROM position
-            WHERE pos_id = ?
-        ''', (position_id,))
-        position = cursor.fetchone()
-        
-        if position:
-            position_name, department_id, basic_salary = position
-
-            # Insert into the employee table
-            cursor.execute('''
-                INSERT INTO employee (emp_name, department, pos_id, job_status, gender, termination_date, join_date, employee_status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (emp_name, department_id, position_id, job_status, gender, termination_date, join_date, employee_status))
-
-            emp_id = cursor.lastrowid  # Get the last inserted employee ID
-
-            # Get the current month and year
-            from datetime import datetime
-            current_month = datetime.now().strftime('%Y-%m')
-            current_year = datetime.now().strftime('%Y')
-
-            # Insert into the payroll table
-            cursor.execute('''
-                INSERT INTO payroll (emp_id, basic_salary, month, year)
-                VALUES (?, ?, ?, ?)
-            ''', (emp_id, basic_salary, current_month, current_year))
-
-            conn.commit()
-            conn.close()
-
+        # Form validation: Check for required fields
+        if not emp_name or not email or not phone or not position_id or not job_status or not join_date or not employee_status:
+            flash('All fields are required!')
             return redirect(url_for('add_employee'))
 
-    # GET request: Render the form to add an employee
-    conn = get_db()
-    cursor = conn.cursor()
+        try:
+            # Get the position details including the department and basic salary
+            cursor.execute('''
+                SELECT position_name, dept_id, basic_salary
+                FROM position
+                WHERE pos_id = ?
+            ''', (position_id,))
+            position = cursor.fetchone()
+
+            if position:
+                position_name, department_id, basic_salary = position
+
+                # Insert the new employee into the employee table
+                cursor.execute('''
+                    INSERT INTO employee (emp_name, email, phone, dept_id, pos_id, job_status, gender, termination_date, join_date, employee_status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (emp_name, email, phone, department_id, position_id, job_status, gender, termination_date, join_date, employee_status))
+
+                emp_id = cursor.lastrowid  # Get the last inserted employee ID
+
+                # Insert into the payroll table
+                from datetime import datetime
+                current_month = datetime.now().strftime('%Y-%m')
+                current_year = datetime.now().strftime('%Y')
+
+                cursor.execute('''
+                    INSERT INTO payroll (emp_id, basic_salary, month, year)
+                    VALUES (?, ?, ?, ?)
+                ''', (emp_id, basic_salary, current_month, current_year))
+
+                conn.commit()
+                flash('Employee added successfully!')
+
+        except sqlite3.Error as e:
+            conn.rollback()
+            flash(f'An error occurred: {e}')
+        
+        finally:
+            conn.close()
+
+        return redirect(url_for('add_employee'))
+
+    # GET request: Fetch the positions
     cursor.execute('SELECT pos_id, position_name FROM position')
     positions = cursor.fetchall()
+
     conn.close()
 
     return render_template('add_employee.html', positions=positions, employees=employees)
@@ -964,22 +1012,36 @@ def add_teams():
     cursor = conn.cursor()
 
     if request.method == 'POST':
-        team_name = request.form['team_name']
-        department_id = request.form['department_id']
-        team_leader_id = request.form['leader_id']
+        team_name = request.form.get('team_name')
+        department_id = request.form.get('department_id')
+        team_leader_id = request.form.get('leader_id')
 
-        # Insert the new team into the team table
-        cursor.execute('''
-            INSERT INTO team (team_name, dept_id, leader_id) 
-            VALUES (?, ?, ?)
-        ''', (team_name, department_id, team_leader_id))
+        # Validate form fields
+        if not team_name or not department_id or not team_leader_id:
+            flash('All fields are required!')
+            return redirect(url_for('add_teams'))
 
-        # Update the employee to reflect their new team leader role
-        if team_leader_id:
-            cursor.execute('UPDATE employee SET is_leader = 1 WHERE emp_id = ?', (team_leader_id,))
+        try:
+            # Insert the new team into the team table
+            cursor.execute('''
+                INSERT INTO team (team_name, dept_id, leader_id) 
+                VALUES (?, ?, ?)
+            ''', (team_name, department_id, team_leader_id))
 
-        conn.commit()
-        conn.close()
+            # Update the employee to reflect their new team leader role
+            if team_leader_id:
+                cursor.execute('UPDATE employee SET is_team_leader = 1 WHERE emp_id = ?', (team_leader_id,))
+
+            conn.commit()
+            flash('Team added successfully!')
+
+        except sqlite3.Error as e:
+            conn.rollback()
+            flash(f'An error occurred: {e}')
+
+        finally:
+            conn.close()
+
         return redirect(url_for('add_teams'))
 
     # Fetch departments for selection
@@ -1017,39 +1079,103 @@ def teams():
     return render_template('teams.html', teams=teams)
 
 
+@app.route('/delete_team/<int:team_id>', methods=['POST'])
+def delete_team(team_id):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    try:
+        # Fetch the leader of the team
+        cursor.execute('SELECT leader_id FROM team WHERE team_id = ?', (team_id,))
+        leader_id = cursor.fetchone()
+
+        # Reset the team_id and is_team_leader for employees in this team
+        cursor.execute('UPDATE employee SET team_id = NULL WHERE team_id = ?', (team_id,))
+
+        # Reset the team leader's `is_team_leader` flag if applicable
+        if leader_id and leader_id[0]:
+            cursor.execute('UPDATE employee SET is_team_leader = 0 WHERE emp_id = ?', (leader_id[0],))
+
+        # Delete the team
+        cursor.execute('DELETE FROM team WHERE team_id = ?', (team_id,))
+
+        conn.commit()
+        flash('Team deleted successfully!')
+
+    except Exception as e:
+        conn.rollback()
+        flash(f'An error occurred: {e}')
+
+    finally:
+        conn.close()
+
+    return redirect(url_for('teams'))
+
+
 @app.route('/add_employee_to_team/<int:team_id>', methods=['GET', 'POST'])
 def add_employee_to_team(team_id):
     conn = get_db()
     cursor = conn.cursor()
 
     if request.method == 'POST':
-        emp_id = request.form['emp_id']
+        emp_id = request.form.get('emp_id')
+
+        # Validate that emp_id is provided and employee exists
+        if not emp_id:
+            flash('Please select an employee.')
+            return redirect(url_for('add_employee_to_team', team_id=team_id))
+
+        # Check if the employee is already assigned to a team
+        cursor.execute('SELECT team_id FROM employee WHERE emp_id = ?', (emp_id,))
+        existing_team = cursor.fetchone()
         
-        # Update the employee's team in the employee table
-        cursor.execute('UPDATE employee SET team_id = ? WHERE emp_id = ?', (team_id, emp_id))
-        
-        conn.commit()
-        conn.close()
+        if existing_team and existing_team[0]:
+            flash('This employee is already assigned to a team.')
+            return redirect(url_for('add_employee_to_team', team_id=team_id))
+
+        try:
+            # Update the employee's team in the employee table
+            cursor.execute('UPDATE employee SET team_id = ? WHERE emp_id = ?', (team_id, emp_id))
+            conn.commit()
+            flash('Employee added to the team successfully!')
+
+        except sqlite3.Error as e:
+            conn.rollback()
+            flash(f'An error occurred: {e}')
+
+        finally:
+            conn.close()
+
         return redirect(url_for('view_team', team_id=team_id))
 
-    # Fetch the team details
-    cursor.execute('SELECT team_id, team_name FROM team WHERE team_id = ?', (team_id,))
-    team = cursor.fetchone()
+    try:
+        # Fetch the team details
+        cursor.execute('SELECT team_id, team_name FROM team WHERE team_id = ?', (team_id,))
+        team = cursor.fetchone()
 
-    # Fetch employees who are not assigned to a team
-    cursor.execute('SELECT emp_id, emp_name FROM employee WHERE team_id IS NULL')
-    employees = cursor.fetchall()
+        if not team:
+            flash('Team not found.')
+            return redirect(url_for('teams'))
 
-    # Fetch employees currently assigned to this team
-    cursor.execute('''
-        SELECT e.emp_id, e.emp_name 
-        FROM employee e
-        WHERE e.team_id = ?
-    ''', (team_id,))
-    team_employees = cursor.fetchall()
+        # Fetch employees who are not assigned to a team
+        cursor.execute('SELECT emp_id, emp_name FROM employee WHERE team_id IS NULL')
+        employees = cursor.fetchall()
 
-    conn.close()
-    
+        # Fetch employees currently assigned to this team
+        cursor.execute('''
+            SELECT e.emp_id, e.emp_name 
+            FROM employee e
+            WHERE e.team_id = ?
+        ''', (team_id,))
+        team_employees = cursor.fetchall()
+
+    except sqlite3.Error as e:
+        flash(f'An error occurred: {e}')
+        employees = team_employees = []
+
+    finally:
+        conn.close()
+
     return render_template('add_employee_to_team.html', team=team, employees=employees, team_employees=team_employees)
 
 
@@ -1058,81 +1184,403 @@ def view_team(team_id):
     conn = get_db()
     cursor = conn.cursor()
 
-    # Fetch the team details
-    cursor.execute('''
-        SELECT t.team_id, t.team_name, d.name AS department_name, e.emp_name AS leader_name
-        FROM team t
-        LEFT JOIN department d ON t.department_id = d.dept_id
-        LEFT JOIN employee e ON t.team_leader_id = e.emp_id
-        WHERE t.team_id = ?
-    ''', (team_id,))
-    team = cursor.fetchone()
+    try:
+        # Fetch the team details
+        cursor.execute('''
+            SELECT t.team_id, t.team_name, d.name AS department_name, e.emp_name AS leader_name
+            FROM team t
+            LEFT JOIN department d ON t.dept_id = d.dept_id
+            LEFT JOIN employee e ON t.leader_id = e.emp_id
+            WHERE t.team_id = ?
+        ''', (team_id,))
+        team = cursor.fetchone()
 
-    # Fetch employees assigned to this team
-    cursor.execute('''
-        SELECT e.emp_id, e.emp_name
-        FROM employee e
-        WHERE e.team_id = ?
-    ''', (team_id,))
-    employees = cursor.fetchall()
+        if not team:
+            flash('Team not found.')
+            return redirect(url_for('teams'))
 
-    conn.close()
+        # Fetch employees assigned to this team
+        cursor.execute('''
+            SELECT e.emp_id, e.emp_name
+            FROM employee e
+            WHERE e.team_id = ?
+        ''', (team_id,))
+        employees = cursor.fetchall()
+
+    except sqlite3.Error as e:
+        flash(f'An error occurred: {e}')
+        employees = []
+
+    finally:
+        conn.close()
 
     return render_template('view_team.html', team=team, employees=employees)
-
-
-@app.route('/delete_team/<int:team_id>', methods=['POST'])
-def delete_team(team_id):
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    # Delete the team
-    cursor.execute('DELETE FROM team WHERE team_id = ?', (team_id,))
-    
-    conn.commit()
-    conn.close()
-    
-    flash('Team deleted successfully!')
-    return redirect(url_for('teams'))
 
 
 @app.route('/edit_team/<int:team_id>', methods=['GET', 'POST'])
 def edit_team(team_id):
     conn = get_db()
     cursor = conn.cursor()
-    
+
     if request.method == 'POST':
-        team_name = request.form['team_name']
-        department_id = request.form['department_id']
-        team_leader_id = request.form['team_leader_id']
+        team_name = request.form.get('team_name')
+        department_id = request.form.get('department_id')
+        new_team_leader_id = request.form.get('team_leader_id')
         
-        # Update the team with the new details
-        cursor.execute('''
-            UPDATE team
-            SET team_name = ?, dept_id = ?, leader_id = ?
-            WHERE team_id = ?
-        ''', (team_name, department_id, team_leader_id, team_id))
+        # Validate the form data
+        if not team_name or not department_id:
+            flash('Team name and department are required.')
+            return redirect(url_for('edit_team', team_id=team_id))
         
-        conn.commit()
-        conn.close()
-        
-        flash('Team updated successfully!')
+        try:
+            # Get the current leader's ID (before the update)
+            cursor.execute('SELECT leader_id FROM team WHERE team_id = ?', (team_id,))
+            current_team_leader = cursor.fetchone()
+
+            # If there is a current leader, safely extract the ID
+            current_team_leader_id = current_team_leader[0] if current_team_leader else None
+
+            # Update the team with the new details
+            cursor.execute('''
+                UPDATE team
+                SET team_name = ?, dept_id = ?, leader_id = ?
+                WHERE team_id = ?
+            ''', (team_name, department_id, new_team_leader_id, team_id))
+
+            # Reset the `is_team_leader` flag for the current leader if it is changing
+            if current_team_leader_id and current_team_leader_id != new_team_leader_id:
+                cursor.execute('UPDATE employee SET is_team_leader = 0 WHERE emp_id = ?', (current_team_leader_id,))
+
+            # Set the `is_team_leader` flag for the new leader
+            if new_team_leader_id:
+                cursor.execute('UPDATE employee SET is_team_leader = 1 WHERE emp_id = ?', (new_team_leader_id,))
+
+            conn.commit()
+            flash('Team updated successfully!')
+
+        except sqlite3.Error as e:
+            conn.rollback()
+            flash(f'An error occurred: {e}')
+
+        finally:
+            conn.close()
+
         return redirect(url_for('teams'))
-    
+
     # GET request: Fetch the current team details to display in the form
     cursor.execute('SELECT team_id, team_name, dept_id, leader_id FROM team WHERE team_id = ?', (team_id,))
     team = cursor.fetchone()
-    
+
+    if not team:
+        flash('Team not found.')
+        return redirect(url_for('teams'))
+
     # Fetch the list of departments and employees for dropdowns
     cursor.execute('SELECT dept_id, name FROM department')
     departments = cursor.fetchall()
-    
-    cursor.execute('SELECT emp_id, emp_name FROM employee WHERE emp_id NOT IN (SELECT leader_id FROM team WHERE leader_id IS NOT NULL) OR emp_id = ?', (team[3],))
+
+    cursor.execute('''
+        SELECT emp_id, emp_name 
+        FROM employee 
+        WHERE emp_id NOT IN (SELECT leader_id FROM team WHERE leader_id IS NOT NULL) 
+        OR emp_id = ?
+    ''', (team[3],))
     employees = cursor.fetchall()
-    
+
     conn.close()
-    
+
     return render_template('edit_teams.html', team=team, departments=departments, employees=employees)
+
+
+def end_career_record(emp_id, end_date):
+    """Helper function to end the current career record for an employee."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            UPDATE career
+            SET end_date = ?
+            WHERE emp_id = ? AND end_date IS NULL
+        ''', (end_date, emp_id))
+        conn.commit()
+    except sqlite3.Error as e:
+        conn.rollback()
+        flash(f'An error occurred while ending the career record: {e}')
+    finally:
+        conn.close()
+
+@app.route('/update_career/<int:emp_id>', methods=['POST'])
+def update_career(emp_id):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    new_position_id = request.form.get('position')
+    new_department_id = request.form.get('department')
+    new_team_id = request.form.get('team_id')
+    career_status = request.form.get('career_status')
+    start_date = request.form.get('start_date')
+
+    # Validate required fields
+    if not new_position_id or not new_department_id or not start_date:
+        flash('Position, department, and start date are required.')
+        return redirect(url_for('employee_details', emp_id=emp_id))
+
+    # End the previous career record
+    end_career_record(emp_id, start_date)
+
+    try:
+        # Insert a new career record
+        cursor.execute('''
+            INSERT INTO career (emp_id, pos_id, dept_id, team_id, status, start_date)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (emp_id, new_position_id, new_department_id, new_team_id, career_status, start_date))
+        conn.commit()
+        flash('Career updated successfully!')
+    except sqlite3.Error as e:
+        conn.rollback()
+        flash(f'An error occurred while updating the career: {e}')
+    finally:
+        conn.close()
+
+    return redirect(url_for('employee_details', emp_id=emp_id))
+
+
+@app.route('/promote_employee/<int:emp_id>', methods=['POST'])
+def promote_employee(emp_id):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    new_position_id = request.form.get('position')
+    new_basic_salary = request.form.get('basic_salary')
+    effective_date = request.form.get('effective_date')
+
+    if not new_position_id or not new_basic_salary or not effective_date:
+        flash('Position, basic salary, and effective date are required for promotion.')
+        return redirect(url_for('employee_details', emp_id=emp_id))
+
+    # End the previous career record
+    end_career_record(emp_id, effective_date)
+
+    try:
+        # Insert a new career record for the promotion
+        cursor.execute('''
+            INSERT INTO career (emp_id, pos_id, dept_id, team_id, status, start_date, basic_salary)
+            SELECT emp_id, ?, dept_id, team_id, 'Promotion', ?, ?
+            FROM employee
+            WHERE emp_id = ?
+        ''', (new_position_id, effective_date, new_basic_salary, emp_id))
+
+        # Update the employee's position and salary
+        cursor.execute('''
+            UPDATE employee
+            SET pos_id = ?, basic_salary = ?
+            WHERE emp_id = ?
+        ''', (new_position_id, new_basic_salary, emp_id))
+
+        conn.commit()
+        flash('Employee promoted successfully!')
+    except sqlite3.Error as e:
+        conn.rollback()
+        flash(f'An error occurred while promoting the employee: {e}')
+    finally:
+        conn.close()
+
+    return redirect(url_for('employee_details', emp_id=emp_id))
+
+
+@app.route('/demote_employee/<int:emp_id>', methods=['POST'])
+def demote_employee(emp_id):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    new_position_id = request.form.get('position')  # Safely get the form data
+    new_basic_salary = request.form.get('basic_salary')
+    effective_date = request.form.get('effective_date')
+
+    if not new_position_id or not new_basic_salary or not effective_date:
+        flash('Position, salary, and effective date are required for demotion.')
+        return redirect(url_for('employee_details', emp_id=emp_id))
+
+    try:
+        # Close the previous career record
+        cursor.execute('''
+            UPDATE career
+            SET end_date = ?
+            WHERE emp_id = ? AND end_date IS NULL
+        ''', (effective_date, emp_id))
+
+        # Insert a new career record for the demotion
+        cursor.execute('''
+            INSERT INTO career (emp_id, pos_id, dept_id, team_id, status, start_date, basic_salary)
+            SELECT emp_id, ?, dept_id, team_id, 'Demotion', ?, ?
+            FROM employee
+            WHERE emp_id = ?
+        ''', (new_position_id, effective_date, new_basic_salary, emp_id))
+
+        # Update the employee's position and salary in the employee table
+        cursor.execute('''
+            UPDATE employee
+            SET pos_id = ?, basic_salary = ?
+            WHERE emp_id = ?
+        ''', (new_position_id, new_basic_salary, emp_id))
+
+        conn.commit()
+        flash('Employee demoted successfully!')
+
+    except sqlite3.Error as e:
+        conn.rollback()
+        flash(f'An error occurred: {e}')
+    
+    finally:
+        conn.close()
+
+    return redirect(url_for('employee_details', emp_id=emp_id))
+
+
+@app.route('/transfer_employee/<int:emp_id>', methods=['POST'])
+def transfer_employee(emp_id):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    new_department_id = request.form.get('department')
+    new_team_id = request.form.get('team')
+    effective_date = request.form.get('effective_date')
+
+    if not new_department_id or not effective_date:
+        flash('Department and effective date are required for transfer.')
+        return redirect(url_for('employee_details', emp_id=emp_id))
+
+    try:
+        # Close the previous career record
+        cursor.execute('''
+            UPDATE career
+            SET end_date = ?
+            WHERE emp_id = ? AND end_date IS NULL
+        ''', (effective_date, emp_id))
+
+        # Insert a new career record for the transfer
+        cursor.execute('''
+            INSERT INTO career (emp_id, pos_id, dept_id, team_id, status, start_date, basic_salary)
+            SELECT emp_id, pos_id, ?, ?, 'Transfer', ?, basic_salary
+            FROM employee
+            WHERE emp_id = ?
+        ''', (new_department_id, new_team_id, effective_date, emp_id))
+
+        # Update the employee's department and team in the employee table
+        cursor.execute('''
+            UPDATE employee
+            SET dept_id = ?, team_id = ?
+            WHERE emp_id = ?
+        ''', (new_department_id, new_team_id, emp_id))
+
+        conn.commit()
+        flash('Employee transferred successfully!')
+
+    except sqlite3.Error as e:
+        conn.rollback()
+        flash(f'An error occurred: {e}')
+    
+    finally:
+        conn.close()
+
+    return redirect(url_for('employee_details', emp_id=emp_id))
+
+@app.route('/terminate_employee/<int:emp_id>', methods=['POST'])
+def terminate_employee(emp_id):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    termination_date = request.form.get('termination_date')
+
+    if not termination_date:
+        flash('Termination date is required.')
+        return redirect(url_for('employee_details', emp_id=emp_id))
+
+    try:
+        # Close the previous career record
+        cursor.execute('''
+            UPDATE career
+            SET end_date = ?
+            WHERE emp_id = ? AND end_date IS NULL
+        ''', (termination_date, emp_id))
+
+        # Insert a new career record for the termination
+        cursor.execute('''
+            INSERT INTO career (emp_id, pos_id, dept_id, team_id, status, start_date)
+            SELECT emp_id, pos_id, dept_id, team_id, 'Termination', ?
+            FROM employee
+            WHERE emp_id = ?
+        ''', (termination_date, emp_id))
+
+        # Update the employee's status to 'Terminated'
+        cursor.execute('''
+            UPDATE employee
+            SET employee_status = 'Terminated', termination_date = ?
+            WHERE emp_id = ?
+        ''', (termination_date, emp_id))
+
+        conn.commit()
+        flash('Employee terminated successfully!')
+
+    except sqlite3.Error as e:
+        conn.rollback()
+        flash(f'An error occurred: {e}')
+    
+    finally:
+        conn.close()
+
+    return redirect(url_for('employee_details', emp_id=emp_id))
+
+
+@app.route('/submit_feedback', methods=['POST'])
+def submit_feedback():
+    staff_name = request.form.get('staff_name')  # Safely get the form data
+    problem_description = request.form.get('problem_description')
+    team_id = request.form.get('team_id')
+
+    # Validate required fields
+    if not staff_name or not problem_description or not team_id:
+        flash('All fields are required to submit feedback.')
+        return redirect(url_for('your_feedback_page'))
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    try:
+        # Insert feedback into the database
+        cursor.execute('''
+            INSERT INTO feedback (staff_name, problem_description, team_id)
+            VALUES (?, ?, ?)
+        ''', (staff_name, problem_description, team_id))
+
+        conn.commit()
+        flash('Your feedback has been submitted to the HR team!')
+
+    except sqlite3.Error as e:
+        conn.rollback()
+        flash(f'An error occurred: {e}')
+
+    finally:
+        conn.close()
+
+    return redirect(url_for('your_feedback_page'))
+
+
+@app.route('/hr_teams')
+def hr_teams():
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Fetch HR team information
+    cursor.execute('''
+        SELECT team_id, leader_name, position, email, phone
+        FROM hr_teams
+    ''')
+    hr_teams = cursor.fetchall()
+
+    conn.close()
+
+    return render_template('hr_teams.html', hr_teams=hr_teams)
 
 
 #ideas

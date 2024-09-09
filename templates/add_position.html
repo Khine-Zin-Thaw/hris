@@ -7,7 +7,8 @@
       <span class="text-muted fw-light">Organization management/</span>
       Department management
     </h4>
-         <!-- Positions Table -->
+    
+    <!-- Positions Table -->
     <div class="card mb-4">
       <h5 class="card-header">Positions</h5>
       <div class="table-responsive text-nowrap">
@@ -17,6 +18,7 @@
                       <th>Position ID</th>
                       <th>Name</th>
                       <th>Department</th>
+                      <th>Team</th>  <!-- Added Team Column -->
                       <th>Basic Salary</th>
                       <th>Actions</th>
                   </tr>
@@ -27,20 +29,23 @@
                       <td>{{ position[0] }}</td>
                       <td>{{ position[1] }}</td>
                       <td>{{ position[2] }}</td>
-                      <td>{{ position[3] }}</td>
+                      <td>{{ position[3] if position[3] else 'No Team' }}</td>  <!-- Display 'No Team' if none is assigned -->
+                      <td>{{ position[4] }}</td>
                       <td>
                           <a href="{{ url_for('edit_position', pos_id=position[0]) }}" class="btn btn-warning btn-sm me-1">Edit</a>
                           <form action="{{ url_for('delete_position', pos_id=position[0]) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this position?');">
                               <input type="hidden" name="pos_id" value="{{ position[0] }}">
                               <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                           </form>
-                                                      </td>
+                      </td>
                   </tr>
                   {% endfor %}
               </tbody>
           </table>
       </div>
   </div>
+
+  <!-- Flash messages for errors -->
   {% with messages = get_flashed_messages() %}
   {% if messages %}
       <div class="alert alert-danger">
@@ -49,47 +54,59 @@
           {% endfor %}
       </div>
   {% endif %}
-{% endwith %}
+  {% endwith %}
 
-    <div class="row justify-content-center">
-      <div class="col-md-8">
-        <form method="POST" action="{{ url_for('add_position') }}">
-          <!-- Input Sizing -->
-          <div class="card mb-4">
-            <h5 class="card-header">Adding Position</h5>
-            <div class="card-body">
-              
-              <!-- Position Name -->
-              <div class="mb-3">
-                <label for="position_name" class="form-label">Position Name</label>
-                <input name="position_name" id="position_name" class="form-control" type="text" placeholder="Input Text" required />
-              </div>
-              
-              <!-- Select Department -->
-              <div class="mb-3">
-                <label for="department" class="form-label">Select Department</label>
-                <select id="department" class="form-select" name="department" required>
-                  <option value="" disabled selected>Select Department</option>
-                  {% for department in departments %}
-                    <option value="{{ department[0] }}">{{ department[1] }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              
-              <!-- Basic Salary -->
-              <div class="mb-3">
-                <label for="basic_salary" class="form-label">Basic Salary</label>
-                <input name="basic_salary" id="basic_salary" class="form-control" type="number" placeholder="Input Amount" required />
-              </div>
-              
-              <!-- Submit Button -->
-              <button type="submit" class="btn btn-primary">Submit</button>
-              <a class="btn btn-secondary ms-2" href="{{ url_for('index') }}">Return to Main Page</a>
+  <!-- Add Position Form -->
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <form method="POST" action="{{ url_for('add_position') }}">
+        <!-- Input Sizing -->
+        <div class="card mb-4">
+          <h5 class="card-header">Adding Position</h5>
+          <div class="card-body">
+            
+            <!-- Position Name -->
+            <div class="mb-3">
+              <label for="position_name" class="form-label">Position Name</label>
+              <input name="position_name" id="position_name" class="form-control" type="text" placeholder="Input Text" required />
             </div>
+            
+            <!-- Select Department -->
+            <div class="mb-3">
+              <label for="department" class="form-label">Select Department</label>
+              <select id="department" class="form-select" name="department" required>
+                <option value="" disabled selected>Select Department</option>
+                {% for department in departments %}
+                  <option value="{{ department[0] }}">{{ department[1] }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            
+            <!-- Select Team (Optional) -->
+            <div class="mb-3">
+              <label for="team" class="form-label">Select Team (Optional)</label>
+              <select id="team" class="form-select" name="team">
+                <option value="" selected>No Team</option>
+                {% for team in teams %}
+                  <option value="{{ team[0] }}">{{ team[1] }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            
+            <!-- Basic Salary -->
+            <div class="mb-3">
+              <label for="basic_salary" class="form-label">Basic Salary</label>
+              <input name="basic_salary" id="basic_salary" class="form-control" type="number" placeholder="Input Amount" required />
+            </div>
+            
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary">Submit</button>
+            <a class="btn btn-secondary ms-2" href="{{ url_for('index') }}">Return to Main Page</a>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   </div>
+</div>
 
 {% endblock %}

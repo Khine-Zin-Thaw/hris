@@ -2,110 +2,101 @@
 
 {% block content %}
 
-{% with messages = get_flashed_messages() %}
-{% if messages %}
-    <div class="alert alert-danger">
-        {% for message in messages %}
-            {{ message }}
-        {% endfor %}
-    </div>
-{% endif %}
-{% endwith %}
+<div class="container mt-5">
+    <h1>Add Employee</h1>
 
-
-<div class="container mt-4">
-    <h1>Employee Management</h1>
-
-    {% if session['role'] == 'manager' or session['role'] == 'recruit_admin' %}
-        <a class="btn btn-primary mb-3" href="{{ url_for('add_employee') }}">Add Employee</a>
-    {% endif %}
-    <a class="btn btn-secondary mb-3" href="{{ url_for('index') }}">Return to Main Page</a>
-
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Employee ID</th>
-                <th>Name</th>
-                <th>Department</th>
-                <th>Job Status</th>
-                <th>Gender</th>
-                <th>Join Date</th>
-                <th>Employee Status</th>
-                <th>Termination Date</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for employee in employees %}
-            <tr>
-                <td>{{ employee.emp_id }}</td>
-                <td>{{ employee.emp_name }}</td>
-                <td>{{ employee.department_name }}</td>
-                <td>{{ employee.job_status }}</td>
-                <td>{{ employee.gender }}</td>
-                <td>{{ employee.join_date }}</td>
-                <td>{{ employee.employee_status }}</td>
-                <td>{{ employee.termination_date }}</td>
-            </tr>
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="alert alert-danger">
+            {% for message in messages %}
+                {{ message }}
             {% endfor %}
-        </tbody>
-    </table>
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('add_employee') }}">
+        <!-- Employee Name -->
+        <div class="form-group">
+            <label for="emp_name">Employee Name</label>
+            <input type="text" class="form-control" id="emp_name" name="emp_name" required>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" class="form-control" id="email" name="email" required>
+        </div>
+
+        <!-- Phone Number -->
+        <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" class="form-control" id="phone" name="phone" required>
+        </div>
+
+        <!-- Position -->
+        <div class="form-group">
+            <label for="position">Position</label>
+            <select class="form-control" id="position" name="position" required>
+                <option value="" disabled selected>Select Position</option>
+                {% for pos in positions %}
+                <option value="{{ pos.pos_id }}">{{ pos.position_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Job Status -->
+        <div class="form-group">
+            <label for="job_status">Job Status</label>
+            <select class="form-control" id="job_status" name="job_status" required>
+                <option value="" disabled selected>Select Job Status</option>
+                <option value="Full Time">Full Time</option>
+                <option value="Part Time">Part Time</option>
+                <option value="Contract">Contract</option>
+                <option value="Intern">Intern</option>
+            </select>
+        </div>
+
+        <!-- Gender -->
+        <div class="form-group">
+            <label for="gender">Gender</label>
+            <select class="form-control" id="gender" name="gender" required>
+                <option value="" disabled selected>Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <!-- Termination Date -->
+        <div class="form-group">
+            <label for="termination_date">Termination Date</label>
+            <input type="date" class="form-control" id="termination_date" name="termination_date">
+        </div>
+
+        <!-- Join Date -->
+        <div class="form-group">
+            <label for="join_date">Join Date</label>
+            <input type="date" class="form-control" id="join_date" name="join_date" required>
+        </div>
+
+        <!-- Employee Status -->
+        <div class="form-group">
+            <label for="employee_status">Employee Status</label>
+            <select class="form-control" id="employee_status" name="employee_status" required>
+                <option value="" disabled selected>Select Employee Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+            </select>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-primary">Add Employee</button>
+    </form>
+
+    <!-- Return to Employee List -->
+    <a class="btn btn-secondary mt-3" href="{{ url_for('index') }}">Return to Employee List</a>
 </div>
 
-
-<div class="container mt-5">
-        <h1>Add Employee</h1>
-        <form method="POST" action="{{ url_for('add_employee') }}">
-            <div class="form-group">
-                <label for="emp_name">Employee Name</label>
-                <input type="text" class="form-control" id="emp_name" name="emp_name" required>
-            </div>
-            <div class="form-group">
-                <label for="position">Position</label>
-                <select class="form-control" id="position" name="position" required>
-                    <option value="" disabled selected>Select Position</option>
-                    {% for pos in positions %}
-                    <option value="{{ pos.pos_id }}">{{ pos.position_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="job_status">Job Status</label>
-                <select class="form-control" id="job_status" name="job_status" required>
-                    <option value="" disabled selected>Select Job Status</option>
-                    <option value="Full Time">Full Time</option>
-                    <option value="Part Time">Part Time</option>
-                    <option value="Contract">Contract</option>
-                    <option value="Intern">Intern</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="gender">Gender</label>
-                <select class="form-control" id="gender" name="gender" required>
-                    <option value="" disabled selected>Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="termination_date">Termination Date</label>
-                <input type="date" class="form-control" id="termination_date" name="termination_date">
-            </div>
-            <div class="form-group">
-                <label for="join_date">Join Date</label>
-                <input type="date" class="form-control" id="join_date" name="join_date" required>
-            </div>
-            <div class="form-group">
-                <label for="employee_status">Employee Status</label>
-                <select class="form-control" id="employee_status" name="employee_status" required>
-                    <option value="" disabled selected>Select Employee Status</option>
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary">Add Employee</button>
-        </form>
-        <a class="btn btn-secondary mt-3" href="{{ url_for('index') }}">Return to Employee List</a>
-    </div>
-
-    {% endblock %}
+{% endblock %}
