@@ -3,11 +3,27 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import sqlite3
 import bcrypt
 import logging
+import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = '123'
 
 logging.basicConfig(filename='app.log', level=logging.ERROR)
+
+
+# Define the upload folder and allowed extensions
+profile_folder = os.path.join('static', 'uploads')  # Ensure this folder exists
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['UPLOAD_FOLDER'] = profile_folder
+
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'])
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 
 def get_db():
@@ -21,13 +37,6 @@ def index():
         return redirect(url_for('login'))
     
     return render_template('index.html')
-
-@app.route('/contact_us')
-def contact_us():
-    if 'role' not in session:
-        return redirect(url_for('login'))
-    
-    return render_template('contact_us.html')
 
 
 @app.route('/userbase')
@@ -234,11 +243,11 @@ def add_position():
 
     if request.method == 'POST':
         position_name = request.form.get('position_name')
-        department_id = request.form.get('department')
+        team_id = request.form.get('team')  # Fetch the selected team
         basic_salary = request.form.get('basic_salary')
 
         # Validate form fields
-        if not position_name or not department_id or not basic_salary:
+        if not position_name or not team_id or not basic_salary:
             flash('All fields are required!')
             return redirect(url_for('add_position'))
 
@@ -252,11 +261,11 @@ def add_position():
             return redirect(url_for('add_position'))
 
         try:
-            # Automatically fetch the team_id based on the selected department
-            cursor.execute('SELECT team_id FROM department WHERE dept_id = ?', (department_id,))
-            team_id = cursor.fetchone()[0]
+            # Fetch department based on the selected team
+            cursor.execute('SELECT dept_id FROM team WHERE team_id = ?', (team_id,))
+            department_id = cursor.fetchone()[0]
 
-            # Insert new position into the database
+            # Insert new position into the database with the inferred department
             cursor.execute('''
                 INSERT INTO position (position_name, dept_id, team_id, basic_salary)
                 VALUES (?, ?, ?, ?)
@@ -272,9 +281,9 @@ def add_position():
 
         return redirect(url_for('add_position'))
 
-    # Fetch all departments for the form dropdowns
-    cursor.execute('SELECT dept_id, name FROM department')
-    departments = cursor.fetchall()
+    # Fetch all teams for the form dropdown
+    cursor.execute('SELECT team_id, team_name FROM team')
+    teams = cursor.fetchall()
 
     # Fetch all positions to display in the table
     cursor.execute('''
@@ -287,7 +296,7 @@ def add_position():
 
     conn.close()
 
-    return render_template('add_position.html', departments=departments, positions=positions)
+    return render_template('add_position.html', teams=teams, positions=positions)
 
 
 @app.route('/edit_position/<int:pos_id>', methods=['GET', 'POST'])
@@ -299,12 +308,9 @@ def edit_position(pos_id):
         position_name = request.form['position_name']
         department_id = request.form['department']
         basic_salary = request.form['basic_salary']
-        
-        try:
-            # Automatically fetch the team_id based on the selected department
-            cursor.execute('SELECT team_id FROM department WHERE dept_id = ?', (department_id,))
-            team_id = cursor.fetchone()[0]
+        team_id = request.form['team'] if request.form['team'] else None  # Handle no team case
 
+        try:
             # Update the position's details
             cursor.execute('''
             UPDATE position
@@ -321,15 +327,19 @@ def edit_position(pos_id):
 
         return redirect(url_for('add_position'))
 
-    # GET request: Fetch the current position details, and list of departments
-    cursor.execute('SELECT pos_id, position_name, dept_id, basic_salary FROM position WHERE pos_id = ?', (pos_id,))
+    # GET request: Fetch the current position details, list of departments, and teams
+    cursor.execute('SELECT pos_id, position_name, dept_id, basic_salary, team_id FROM position WHERE pos_id = ?', (pos_id,))
     position = cursor.fetchone()
 
     cursor.execute('SELECT dept_id, name FROM department')
     departments = cursor.fetchall()
 
+    cursor.execute('SELECT team_id, team_name FROM team')
+    teams = cursor.fetchall()  # Fetching the list of teams
+
     conn.close()
-    return render_template('edit_position.html', position=position, departments=departments)
+
+    return render_template('edit_position.html', position=position, departments=departments, teams=teams)
 
 
 @app.route('/delete_position/<int:pos_id>', methods=['POST'])
@@ -511,7 +521,7 @@ def myinfo():
         FROM employee e
         JOIN position p ON e.pos_id = p.pos_id
         JOIN department d ON p.dept_id = d.dept_id
-        LEFT JOIN team t ON d.team_id = t.team_id  -- Joining the team table to get team details
+        LEFT JOIN team t ON d.leader_id = t.team_id  -- Joining the team table to get team details
         WHERE e.emp_id = ?
     ''', (emp_id,))
     employees = cursor.fetchall()
@@ -529,48 +539,67 @@ def myinfo():
 def add_employee():
     if 'role' not in session:
         return redirect(url_for('login'))
-    
+
     conn = get_db()
     cursor = conn.cursor()
 
-    # Fetch employee data based on the user's role
+# Fetch employee data including email, phone, and photo
     emp_id = session.get('emp_id')  # Assuming emp_id is stored in the session
     if session.get('role') == 'staff':
         cursor.execute('''
-            SELECT e.emp_id, e.emp_name, p.position_name, e.job_status, e.gender, e.termination_date, 
-                   e.employee_status, e.join_date, d.name AS department_name
-            FROM employee e
-            JOIN position p ON e.pos_id = p.pos_id
-            JOIN department d ON p.dept_id = d.dept_id
-            WHERE e.emp_id = ?
-        ''', (emp_id,))
+    SELECT e.emp_id, e.emp_name, e.email, e.phone_number, p.position_name, e.job_status, e.gender, e.termination_date, 
+           e.employee_status, e.join_date, d.name AS department_name, e.photo
+    FROM employee e
+    JOIN position p ON e.pos_id = p.pos_id
+    JOIN department d ON p.dept_id = d.dept_id
+    WHERE e.emp_id = ?
+    ''', (emp_id,))
     else:
         cursor.execute('''
-            SELECT e.emp_id, e.emp_name, p.position_name, e.job_status, e.gender, e.termination_date, 
-                   e.employee_status, e.join_date, d.name AS department_name
-            FROM employee e
-            JOIN position p ON e.pos_id = p.pos_id
-            JOIN department d ON p.dept_id = d.dept_id
-        ''')
+    SELECT e.emp_id, e.emp_name, e.email, e.phone_number, p.position_name, e.job_status, e.gender, e.termination_date, 
+           e.employee_status, e.join_date, d.name AS department_name, e.photo
+    FROM employee e
+    JOIN position p ON e.pos_id = p.pos_id
+    JOIN department d ON p.dept_id = d.dept_id
+    ''')
+
 
     employees = cursor.fetchall()
 
     if request.method == 'POST':
         # Capture form data
-        emp_name = request.form.get('emp_name')
+        emp_name = request.form.get('name')
         email = request.form.get('email')
         phone = request.form.get('phone')
         position_id = request.form.get('position')
         job_status = request.form.get('job_status')
         gender = request.form.get('gender')
-        termination_date = request.form.get('termination_date') or None  # Handle optional field
         join_date = request.form.get('join_date')
         employee_status = request.form.get('employee_status')
+        termination_date = request.form.get('termination_date') or None
 
-        # Form validation: Check for required fields
+        # File upload handling
+        photo = request.files.get('photo')  # Profile photo upload
+        if photo:
+            print(f"Uploaded file name: {photo.filename}")
+        else:
+            print("No file uploaded")
+
         if not emp_name or not email or not phone or not position_id or not job_status or not join_date or not employee_status:
             flash('All fields are required!')
             return redirect(url_for('add_employee'))
+        
+        # Handle photo upload
+        photo_filename = None  # Default if no photo is uploaded
+        if photo and photo.filename != '':  # Check if the file exists
+            print(f"Photo detected: {photo.filename}")  # Debugging statement
+            if allowed_file(photo.filename):  # Assuming you have an 'allowed_file' function to validate extensions
+                photo_filename = secure_filename(photo.filename)
+                print(f"Saving photo as: {photo_filename}")  # Debugging statement
+                photo.save(os.path.join(app.config['UPLOAD_FOLDER'], photo_filename))  # Save file
+            else:
+                flash('Invalid photo format or no photo uploaded.')
+                return redirect(url_for('add_employee'))
 
         try:
             # Get the position details including the department and basic salary
@@ -586,9 +615,9 @@ def add_employee():
 
                 # Insert the new employee into the employee table
                 cursor.execute('''
-                    INSERT INTO employee (emp_name, email, phone, dept_id, pos_id, job_status, gender, termination_date, join_date, employee_status)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (emp_name, email, phone, department_id, position_id, job_status, gender, termination_date, join_date, employee_status))
+                    INSERT INTO employee (emp_name, email, phone_number, dept_id, pos_id, job_status, gender, termination_date, join_date, employee_status, photo)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (emp_name, email, phone, department_id, position_id, job_status, gender, termination_date, join_date, employee_status, photo_filename))
 
                 emp_id = cursor.lastrowid  # Get the last inserted employee ID
 
@@ -603,12 +632,12 @@ def add_employee():
                 ''', (emp_id, basic_salary, current_month, current_year))
 
                 conn.commit()
-                flash('Employee added successfully!')
+                flash('Employee added successfully with photo!' if photo_filename else 'Employee added successfully without photo!')
 
         except sqlite3.Error as e:
             conn.rollback()
             flash(f'An error occurred: {e}')
-        
+
         finally:
             conn.close()
 
@@ -621,6 +650,8 @@ def add_employee():
     conn.close()
 
     return render_template('add_employee.html', positions=positions, employees=employees)
+
+
 
 
 @app.route('/check_in', methods=['GET', 'POST'])
@@ -1016,21 +1047,26 @@ def add_teams():
         department_id = request.form.get('department_id')
         team_leader_id = request.form.get('leader_id')
 
-        # Validate form fields
-        if not team_name or not department_id or not team_leader_id:
-            flash('All fields are required!')
+        # Validate form fields (team name and department are required)
+        if not team_name or not department_id:
+            flash('Team name and department are required!')
             return redirect(url_for('add_teams'))
 
         try:
             # Insert the new team into the team table
-            cursor.execute('''
-                INSERT INTO team (team_name, dept_id, leader_id) 
-                VALUES (?, ?, ?)
-            ''', (team_name, department_id, team_leader_id))
+            if team_leader_id:  # If a leader is provided
+                cursor.execute('''
+                    INSERT INTO team (team_name, dept_id, leader_id) 
+                    VALUES (?, ?, ?)
+                ''', (team_name, department_id, team_leader_id))
 
-            # Update the employee to reflect their new team leader role
-            if team_leader_id:
+                # Update the employee to reflect their new team leader role
                 cursor.execute('UPDATE employee SET is_team_leader = 1 WHERE emp_id = ?', (team_leader_id,))
+            else:  # If no leader is provided
+                cursor.execute('''
+                    INSERT INTO team (team_name, dept_id, leader_id) 
+                    VALUES (?, ?, NULL)
+                ''', (team_name, department_id))
 
             conn.commit()
             flash('Team added successfully!')
@@ -1042,7 +1078,7 @@ def add_teams():
         finally:
             conn.close()
 
-        return redirect(url_for('add_teams'))
+        return redirect(url_for('teams'))
 
     # Fetch departments for selection
     cursor.execute('SELECT dept_id, name FROM department')
@@ -1532,55 +1568,60 @@ def terminate_employee(emp_id):
     return redirect(url_for('employee_details', emp_id=emp_id))
 
 
+
+@app.route('/contact_us')
+def contact_us():
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Query to fetch team information and leader details including the photo from the employee table
+    cursor.execute('''
+        SELECT t.team_name, e.emp_name as leader_name, e.email, e.phone_number, e.photo as leader_photo, t.team_id
+        FROM team t
+        JOIN employee e ON t.leader_id = e.emp_id
+    ''')
+    
+    teams = cursor.fetchall()
+
+    # Pass the team details to the template
+    return render_template('contact_us.html', teams=teams)
+
+
 @app.route('/submit_feedback', methods=['POST'])
 def submit_feedback():
-    staff_name = request.form.get('staff_name')  # Safely get the form data
+    # Capture form data
+    staff_name = request.form.get('staff_name')
     problem_description = request.form.get('problem_description')
     team_id = request.form.get('team_id')
 
-    # Validate required fields
+    # Get the current date
+    submission_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    # Input validation
     if not staff_name or not problem_description or not team_id:
-        flash('All fields are required to submit feedback.')
-        return redirect(url_for('your_feedback_page'))
+        flash('All fields are required!', 'danger')
+        return redirect(url_for('people_link'))
 
-    conn = get_db()
-    cursor = conn.cursor()
-
+    # Database insertion
     try:
-        # Insert feedback into the database
+        conn = get_db()
+        cursor = conn.cursor()
+        
         cursor.execute('''
-            INSERT INTO feedback (staff_name, problem_description, team_id)
-            VALUES (?, ?, ?)
-        ''', (staff_name, problem_description, team_id))
-
+            INSERT INTO feedback (staff_name, problem_description, team_id, submission_date)
+            VALUES (?, ?, ?, ?)
+        ''', (staff_name, problem_description, team_id, submission_date))
+        
         conn.commit()
-        flash('Your feedback has been submitted to the HR team!')
-
+        flash('Feedback submitted successfully!', 'success')
+        
     except sqlite3.Error as e:
         conn.rollback()
-        flash(f'An error occurred: {e}')
-
+        flash(f'An error occurred while submitting feedback: {e}', 'danger')
+    
     finally:
         conn.close()
-
-    return redirect(url_for('your_feedback_page'))
-
-
-@app.route('/hr_teams')
-def hr_teams():
-    conn = get_db()
-    cursor = conn.cursor()
-
-    # Fetch HR team information
-    cursor.execute('''
-        SELECT team_id, leader_name, position, email, phone
-        FROM hr_teams
-    ''')
-    hr_teams = cursor.fetchall()
-
-    conn.close()
-
-    return render_template('hr_teams.html', hr_teams=hr_teams)
+    return redirect(url_for('contact_us'))
 
 
 #ideas

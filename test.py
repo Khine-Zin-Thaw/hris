@@ -122,8 +122,6 @@ def print_data():
     conn.close()
 
 if __name__ == "__main__":
-    # Initialize the database and create tables
-    init_db()
 
     # Add sample data to the database
     add_sample_data()

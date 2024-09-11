@@ -71,17 +71,6 @@
               <input name="position_name" id="position_name" class="form-control" type="text" placeholder="Input Text" required />
             </div>
             
-            <!-- Select Department -->
-            <div class="mb-3">
-              <label for="department" class="form-label">Select Department</label>
-              <select id="department" class="form-select" name="department" required>
-                <option value="" disabled selected>Select Department</option>
-                {% for department in departments %}
-                  <option value="{{ department[0] }}">{{ department[1] }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            
             <!-- Select Team (Optional) -->
             <div class="mb-3">
               <label for="team" class="form-label">Select Team (Optional)</label>

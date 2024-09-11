@@ -2,19 +2,23 @@
 
 {% block content %}
 <div class="container-xxl flex-grow-1 container-p-y">
-    <h1 class="fw-bold py-3 mb-4 text-center">People Link</h1>
-
-    <!-- HR Teams Section -->
+    <!-- Teams and Leaders Section -->
     <div class="row text-center">
-        <h2>Our HR Teams</h2>
+        <h2>Our Teams and Leaders</h2>
         <div class="col-md-12 mb-4">
             <div class="row">
-                {% for team in hr_teams %}
+                {% for team in teams %}
                 <div class="col-md-4 mb-3">
                     <div class="card h-100">
                         <div class="card-body">
-                            <h5 class="card-title">{{ team.leader_name }}</h5>
-                            <p class="card-text">{{ team.position }}</p>
+                            <h5 class="card-title">{{ team.team_name }} - {{ team.leader_name }}</h5>
+                            <div class="text-center mb-3">
+                                {% if team.leader_photo %}
+                                <img src="{{ url_for('static', filename='uploads/' ~ team.leader_photo) }}" alt="Profile Photo" class="img-fluid rounded-circle" width="100" height="100">
+                                {% else %}
+                                <img src="{{ url_for('static', filename='assets/img/default-profile.png') }}" alt="Profile Photo" class="img-fluid rounded-circle" width="100" height="100">
+                                {% endif %}
+                            </div>
                             <p>Email: {{ team.email }}</p>
                             <p>Phone: {{ team.phone }}</p>
                         </div>
@@ -35,23 +39,24 @@
                     <label for="staff_name" class="form-label">Your Name</label>
                     <input type="text" class="form-control" id="staff_name" name="staff_name" required>
                 </div>
-
+    
                 <!-- Problem Description -->
                 <div class="form-group mb-3">
                     <label for="problem_description" class="form-label">Describe Your Problem</label>
                     <textarea class="form-control" id="problem_description" name="problem_description" rows="4" required></textarea>
                 </div>
-
-                <!-- HR Team Selection -->
+    
+                <!-- Team Selection -->
                 <div class="form-group mb-3">
-                    <label for="team_id" class="form-label">Select HR Team</label>
+                    <label for="team_id" class="form-label">Select Team</label>
                     <select class="form-control" id="team_id" name="team_id" required>
-                        {% for team in hr_teams %}
-                        <option value="{{ team.team_id }}">{{ team.leader_name }}'s Team</option>
+                        <option value="" disabled selected>Select Team</option> <!-- Placeholder option -->
+                        {% for team in teams %}
+                        <option value="{{ team.team_id }}">{{ team.team_name }} - Led by {{ team.leader_name }}</option>
                         {% endfor %}
                     </select>
                 </div>
-
+    
                 <!-- Submit Button -->
                 <div class="text-center">
                     <button type="submit" class="btn btn-primary">Submit Feedback</button>
@@ -59,5 +64,5 @@
             </form>
         </div>
     </div>
-</div>
+    </div>
 {% endblock %}
