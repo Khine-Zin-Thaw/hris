@@ -1351,46 +1351,6 @@ def edit_team(team_id):
     return render_template('edit_teams.html', team=team, departments=departments, employees=employees)
 
 
-# # Route for Career History
-@app.route('/career_transition')
-def career_transition():
-    if 'role' not in session:
-        return redirect(url_for('login'))
-
-    conn = get_db()
-    cursor = conn.cursor()
-
-# Fetch employee data including email, phone, and photo
-    emp_id = session.get('emp_id')  # Assuming emp_id is stored in the session
-    if session.get('role') == 'staff':
-        cursor.execute('''
-    SELECT e.emp_id, e.emp_name, e.email, e.phone_number, p.position_name, e.job_status, e.gender, e.termination_date, 
-           e.employee_status, e.join_date, d.name AS department_name, e.photo
-    FROM employee e
-    JOIN position p ON e.pos_id = p.pos_id
-    JOIN department d ON p.dept_id = d.dept_id
-    WHERE e.emp_id = ?
-    ''', (emp_id,))
-    else:
-        cursor.execute('''
-    SELECT e.emp_id, e.emp_name, e.email, e.phone_number, p.position_name, e.job_status, e.gender, e.termination_date, 
-           e.employee_status, e.join_date, d.name AS department_name, e.photo
-    FROM employee e
-    JOIN position p ON e.pos_id = p.pos_id
-    JOIN department d ON p.dept_id = d.dept_id
-    ''')
-
-
-    employees = cursor.fetchall()
-
-    # GET request: Fetch the positions
-    cursor.execute('SELECT pos_id, position_name FROM position')
-    positions = cursor.fetchall()
-
-    conn.close()
-
-    return render_template('career_transition.html', positions=positions, employees=employees)
-
 @app.route('/contact_us')
 def contact_us():
     conn = get_db()
@@ -1480,47 +1440,34 @@ def my_attendance():
                            positions=positions, 
                            attendance_records=attendance_records)
 
-
-@app.route('/manage_visions', methods=['GET', 'POST'])
-def manage_visions():
+@app.route('/my_team')
+def my_team():
     conn = get_db()
     cursor = conn.cursor()
-    
-        # Check if there is any data in the about_us table
-    cursor.execute('SELECT * FROM about_us WHERE id = 1')
-    about_us = cursor.fetchone()
 
-    # If no data exists, insert default values (assuming id=1)
-    if not about_us:
-        cursor.execute('''
-            INSERT INTO about_us (id, mission, vision1, vision2, vision3, vision4, vision5)
-            VALUES (1, '', '', '', '', '', '')
-        ''')
-        conn.commit()
+    # Fetch employees with their teams, departments, and leader flags
+    query = '''
+    SELECT employee.emp_name, employee.email, employee.phone_number, department.name, employee.is_team_leader, employee.is_dept_leader
+    FROM employee
+    JOIN department ON employee.dept_id = department.dept_id
+    '''
+    cursor.execute(query)
+    results = cursor.fetchall()
 
+    departments = {}
+    for emp_name, email, phone, dept_name, is_team_leader, is_dept_leader in results:
+        if dept_name not in departments:
+            departments[dept_name] = []
+        departments[dept_name].append({
+            'name': emp_name,
+            'email': email,
+            'is_leader': is_team_leader or is_dept_leader,
+            'role': "Team Leader" if is_team_leader else "Dept Leader" if is_dept_leader else "Member",
+            'team_members': []  # You can extend this logic to add members under leaders
+        })
 
-    if request.method == 'POST':
-        mission = request.form.get('mission')
-        vision1 = request.form.get('vision1')
-        vision2 = request.form.get('vision2')
-        vision3 = request.form.get('vision3')
-        vision4 = request.form.get('vision4')
-        vision5 = request.form.get('vision5')
-
-        cursor.execute('''
-            UPDATE about_us
-            SET mission = ?, vision1 = ?, vision2 = ?, vision3 = ?, vision4 = ?, vision5 = ?
-            WHERE id = 1
-        ''', (mission, vision1, vision2, vision3, vision4, vision5))
-
-        conn.commit()
-        flash('About Us page updated successfully!')
-        return redirect(url_for('manage_visions'))
-
-    cursor.execute('SELECT * FROM about_us WHERE id = 1')
-    about_us = cursor.fetchone()
-
-    return render_template('manage_visions.html', about_us=about_us)
+    conn.close()
+    return render_template('my_team.html', departments=departments)
 
 #ideas
 # # Route for Attendance Record
@@ -1534,9 +1481,9 @@ def manage_visions():
 #     return render_template('contact_hr.html')
 
 # # Route for Contact IT Team
-# @app.route('/contact_it')
-# def contact_it():
-#     return render_template('contact_it.html')
+@app.route('/about_us')
+def about_us():
+    return render_template('about_us.html')
 
 if __name__ == "__main__":
     app.run(debug=True)

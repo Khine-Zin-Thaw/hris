@@ -109,11 +109,11 @@
                 </a>
             </div>
             <div class="icon-box">
-                <a href="career.html">
+                <a href="{{ url_for('my_team') }}">
                     <div class="circle-icon">
-                        <img src="{{ url_for('static', filename='assets/img/elements/7.jpg') }}" alt="Career Icon">
+                        <img src="{{ url_for('static', filename='assets/img/elements/7.jpg') }}" alt="Team Icon">
                     </div>
-                    <p>My Career History</p>
+                    <p>My Team Members</p>
                 </a>
             </div>
             <div class="icon-box">
@@ -125,7 +125,7 @@
                 </a>
             </div>
             <div class="icon-box">
-                <a href="contact_it.html">
+                <a href="{{ url_for('about_us') }}">
                     <div class="circle-icon">
                         <img src="{{ url_for('static', filename='assets/img/elements/7.jpg') }}" alt="IT Icon">
                     </div>

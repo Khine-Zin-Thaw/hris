@@ -1,0 +1,31 @@
+{% extends "userbase.html" %}
+
+{% block content %}
+<h1>Team Directory (Hierarchical View)</h1>
+<div class="tree">
+    <ul>
+        {% for department, employees in departments.items() %}
+        <li>
+            <span class="department">{{ department }}</span>
+            <ul>
+                {% for employee in employees %}
+                <li>
+                    <span>
+                        {{ employee['name'] }}
+                        ({{ employee['role'] }}) - {{ employee['email'] }}
+                    </span>
+                    {% if employee['is_leader'] %}
+                    <ul>
+                        {% for member in employee['team_members'] %}
+                        <li>{{ member['name'] }} - {{ member['email'] }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
