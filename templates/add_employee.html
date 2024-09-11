@@ -65,13 +65,13 @@
         <div class="card-header">
             <h5 class="card-title">Profile Details</h5>
         </div>
+        <form id="formAccountSettings" method="POST" enctype="multipart/form-data">
         <div class="card-body">
             <div class="row">
-            <form id="formAccountSettings" method="POST" enctype="multipart/form-data">
                 <!-- Profile Photo Upload -->
                 <div class="col-md-3 text-center">
                     <img id="uploadedAvatar" src="{{ url_for('static', filename='assets/img/favicon/favicon.webp') }}" alt="Profile Photo" class="img-fluid rounded-circle mb-3" style="max-width: 150px;">
-                    <label class="btn btn-primary btn-block" for="photo">Upload new photo</label>
+                    <label class="btn btn-primary btn-block" for="photo">Choose Employee Profile Photo</label>
                     <input type="file" id="photo" name="photo" class="d-none" accept="image/*" onchange="previewImage(event)">
                 </div>
                 

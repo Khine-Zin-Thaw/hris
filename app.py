@@ -1328,244 +1328,10 @@ def edit_team(team_id):
     return render_template('edit_teams.html', team=team, departments=departments, employees=employees)
 
 
-def end_career_record(emp_id, end_date):
-    """Helper function to end the current career record for an employee."""
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        cursor.execute('''
-            UPDATE career
-            SET end_date = ?
-            WHERE emp_id = ? AND end_date IS NULL
-        ''', (end_date, emp_id))
-        conn.commit()
-    except sqlite3.Error as e:
-        conn.rollback()
-        flash(f'An error occurred while ending the career record: {e}')
-    finally:
-        conn.close()
-
-@app.route('/update_career/<int:emp_id>', methods=['POST'])
-def update_career(emp_id):
-    conn = get_db()
-    cursor = conn.cursor()
-
-    new_position_id = request.form.get('position')
-    new_department_id = request.form.get('department')
-    new_team_id = request.form.get('team_id')
-    career_status = request.form.get('career_status')
-    start_date = request.form.get('start_date')
-
-    # Validate required fields
-    if not new_position_id or not new_department_id or not start_date:
-        flash('Position, department, and start date are required.')
-        return redirect(url_for('employee_details', emp_id=emp_id))
-
-    # End the previous career record
-    end_career_record(emp_id, start_date)
-
-    try:
-        # Insert a new career record
-        cursor.execute('''
-            INSERT INTO career (emp_id, pos_id, dept_id, team_id, status, start_date)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (emp_id, new_position_id, new_department_id, new_team_id, career_status, start_date))
-        conn.commit()
-        flash('Career updated successfully!')
-    except sqlite3.Error as e:
-        conn.rollback()
-        flash(f'An error occurred while updating the career: {e}')
-    finally:
-        conn.close()
-
-    return redirect(url_for('employee_details', emp_id=emp_id))
-
-
-@app.route('/promote_employee/<int:emp_id>', methods=['POST'])
-def promote_employee(emp_id):
-    conn = get_db()
-    cursor = conn.cursor()
-
-    new_position_id = request.form.get('position')
-    new_basic_salary = request.form.get('basic_salary')
-    effective_date = request.form.get('effective_date')
-
-    if not new_position_id or not new_basic_salary or not effective_date:
-        flash('Position, basic salary, and effective date are required for promotion.')
-        return redirect(url_for('employee_details', emp_id=emp_id))
-
-    # End the previous career record
-    end_career_record(emp_id, effective_date)
-
-    try:
-        # Insert a new career record for the promotion
-        cursor.execute('''
-            INSERT INTO career (emp_id, pos_id, dept_id, team_id, status, start_date, basic_salary)
-            SELECT emp_id, ?, dept_id, team_id, 'Promotion', ?, ?
-            FROM employee
-            WHERE emp_id = ?
-        ''', (new_position_id, effective_date, new_basic_salary, emp_id))
-
-        # Update the employee's position and salary
-        cursor.execute('''
-            UPDATE employee
-            SET pos_id = ?, basic_salary = ?
-            WHERE emp_id = ?
-        ''', (new_position_id, new_basic_salary, emp_id))
-
-        conn.commit()
-        flash('Employee promoted successfully!')
-    except sqlite3.Error as e:
-        conn.rollback()
-        flash(f'An error occurred while promoting the employee: {e}')
-    finally:
-        conn.close()
-
-    return redirect(url_for('employee_details', emp_id=emp_id))
-
-
-@app.route('/demote_employee/<int:emp_id>', methods=['POST'])
-def demote_employee(emp_id):
-    conn = get_db()
-    cursor = conn.cursor()
-
-    new_position_id = request.form.get('position')  # Safely get the form data
-    new_basic_salary = request.form.get('basic_salary')
-    effective_date = request.form.get('effective_date')
-
-    if not new_position_id or not new_basic_salary or not effective_date:
-        flash('Position, salary, and effective date are required for demotion.')
-        return redirect(url_for('employee_details', emp_id=emp_id))
-
-    try:
-        # Close the previous career record
-        cursor.execute('''
-            UPDATE career
-            SET end_date = ?
-            WHERE emp_id = ? AND end_date IS NULL
-        ''', (effective_date, emp_id))
-
-        # Insert a new career record for the demotion
-        cursor.execute('''
-            INSERT INTO career (emp_id, pos_id, dept_id, team_id, status, start_date, basic_salary)
-            SELECT emp_id, ?, dept_id, team_id, 'Demotion', ?, ?
-            FROM employee
-            WHERE emp_id = ?
-        ''', (new_position_id, effective_date, new_basic_salary, emp_id))
-
-        # Update the employee's position and salary in the employee table
-        cursor.execute('''
-            UPDATE employee
-            SET pos_id = ?, basic_salary = ?
-            WHERE emp_id = ?
-        ''', (new_position_id, new_basic_salary, emp_id))
-
-        conn.commit()
-        flash('Employee demoted successfully!')
-
-    except sqlite3.Error as e:
-        conn.rollback()
-        flash(f'An error occurred: {e}')
-    
-    finally:
-        conn.close()
-
-    return redirect(url_for('employee_details', emp_id=emp_id))
-
-
-@app.route('/transfer_employee/<int:emp_id>', methods=['POST'])
-def transfer_employee(emp_id):
-    conn = get_db()
-    cursor = conn.cursor()
-
-    new_department_id = request.form.get('department')
-    new_team_id = request.form.get('team')
-    effective_date = request.form.get('effective_date')
-
-    if not new_department_id or not effective_date:
-        flash('Department and effective date are required for transfer.')
-        return redirect(url_for('employee_details', emp_id=emp_id))
-
-    try:
-        # Close the previous career record
-        cursor.execute('''
-            UPDATE career
-            SET end_date = ?
-            WHERE emp_id = ? AND end_date IS NULL
-        ''', (effective_date, emp_id))
-
-        # Insert a new career record for the transfer
-        cursor.execute('''
-            INSERT INTO career (emp_id, pos_id, dept_id, team_id, status, start_date, basic_salary)
-            SELECT emp_id, pos_id, ?, ?, 'Transfer', ?, basic_salary
-            FROM employee
-            WHERE emp_id = ?
-        ''', (new_department_id, new_team_id, effective_date, emp_id))
-
-        # Update the employee's department and team in the employee table
-        cursor.execute('''
-            UPDATE employee
-            SET dept_id = ?, team_id = ?
-            WHERE emp_id = ?
-        ''', (new_department_id, new_team_id, emp_id))
-
-        conn.commit()
-        flash('Employee transferred successfully!')
-
-    except sqlite3.Error as e:
-        conn.rollback()
-        flash(f'An error occurred: {e}')
-    
-    finally:
-        conn.close()
-
-    return redirect(url_for('employee_details', emp_id=emp_id))
-
-@app.route('/terminate_employee/<int:emp_id>', methods=['POST'])
-def terminate_employee(emp_id):
-    conn = get_db()
-    cursor = conn.cursor()
-
-    termination_date = request.form.get('termination_date')
-
-    if not termination_date:
-        flash('Termination date is required.')
-        return redirect(url_for('employee_details', emp_id=emp_id))
-
-    try:
-        # Close the previous career record
-        cursor.execute('''
-            UPDATE career
-            SET end_date = ?
-            WHERE emp_id = ? AND end_date IS NULL
-        ''', (termination_date, emp_id))
-
-        # Insert a new career record for the termination
-        cursor.execute('''
-            INSERT INTO career (emp_id, pos_id, dept_id, team_id, status, start_date)
-            SELECT emp_id, pos_id, dept_id, team_id, 'Termination', ?
-            FROM employee
-            WHERE emp_id = ?
-        ''', (termination_date, emp_id))
-
-        # Update the employee's status to 'Terminated'
-        cursor.execute('''
-            UPDATE employee
-            SET employee_status = 'Terminated', termination_date = ?
-            WHERE emp_id = ?
-        ''', (termination_date, emp_id))
-
-        conn.commit()
-        flash('Employee terminated successfully!')
-
-    except sqlite3.Error as e:
-        conn.rollback()
-        flash(f'An error occurred: {e}')
-    
-    finally:
-        conn.close()
-
-    return redirect(url_for('employee_details', emp_id=emp_id))
+# # Route for Career History
+@app.route('/career_transition')
+def career_transition():
+    return render_template('career_transition.html')
 
 
 
@@ -1624,16 +1390,45 @@ def submit_feedback():
     return redirect(url_for('contact_us'))
 
 
+@app.route('/my_attendance')
+def my_attendance():
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    cursor = conn.cursor()
+    emp_id = session.get('emp_id')  # Assuming emp_id is stored in the session
+
+    # Get the current year and month to filter attendance data for the current month
+    current_year = datetime.now().year
+    current_month = datetime.now().month
+
+    # Fetch attendance data for the employee for the current month
+    cursor.execute('''
+        SELECT a.date, a.status
+        FROM attendance a
+        WHERE a.emp_id = ?
+        AND strftime('%Y', a.date) = ?
+        AND strftime('%m', a.date) = ?
+        ORDER BY a.date
+    ''', (emp_id, str(current_year), str(current_month).zfill(2)))
+    attendance_records = cursor.fetchall()
+
+    # Fetch positions for display in the template (if needed)
+    cursor.execute('SELECT pos_id, position_name FROM position')
+    positions = cursor.fetchall()
+
+    conn.close()
+
+    return render_template('my_attendance.html', 
+                           positions=positions, 
+                           attendance_records=attendance_records)
+
 #ideas
 # # Route for Attendance Record
 # @app.route('/attendance')
 # def attendance():
 #     return render_template('attendance.html')
-
-# # Route for Career History
-# @app.route('/career')
-# def career():
-#     return render_template('career.html')
 
 # # Route for Contact HR Team
 # @app.route('/contact_hr')
