@@ -562,3 +562,67 @@ footer a:hover {
   }
 }
 
+
+.tree ul {
+  list-style-type: none;
+  position: relative;
+  padding-left: 20px;
+}
+
+.tree ul ul {
+  margin-left: 20px;
+}
+
+.tree li {
+  margin: 0;
+  padding: 10px 5px;
+  position: relative;
+}
+
+.tree li::before, .tree li::after {
+  content: '';
+  position: absolute;
+  left: -20px;
+  border-left: 1px solid #ccc;
+}
+
+.tree li::before {
+  top: 0;
+  bottom: 50%;
+  height: 50%;
+  width: 1px;
+}
+
+.tree li::after {
+  top: 50%;
+  bottom: 0;
+  height: 50%;
+  width: 1px;
+}
+
+.tree span.department {
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.tree span {
+  background-color: #f4f4f4;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-weight: normal;
+}
+
+.tree li::before, .tree li::after {
+  border-left: 1px solid #8a8a8a;
+}
+
+.tree li::before {
+  top: 0;
+  bottom: 50%;
+  height: 50%;
+}
+
+.tree li::after {
+  top: 50%;
+  bottom: 0;
+}

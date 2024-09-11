@@ -144,3 +144,33 @@
 .content-footer {
   margin-left: 250px; /* Footer aligned with the content area */
 }
+
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.pagination a {
+  margin: 0 5px;
+  padding: 8px 12px;
+  background-color: #f4f4f4;
+  color: #333;
+  text-decoration: none;
+  border-radius: 4px;
+}
+
+.pagination a.active {
+  background-color: #4CAF50;
+  color: white;
+  font-weight: bold;
+}
+
+.pagination a:hover {
+  background-color: #ddd;
+}
+
+.pagination a.previous, .pagination a.next {
+  font-weight: bold;
+}

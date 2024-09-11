@@ -141,7 +141,9 @@ def add_department():
             if leader_id:
                 cursor.execute('UPDATE employee SET is_dept_leader = 1 WHERE emp_id = ?', (leader_id,))
 
+            # Commit the transaction
             conn.commit()
+
             flash('Department added successfully!')
         except Exception as e:
             conn.rollback()  # Rollback in case of error
@@ -151,22 +153,35 @@ def add_department():
 
         return redirect(url_for('add_department'))
 
-    # Fetch all departments along with their leaders
+    # Pagination setup
+    per_page = 5  # Departments per page
+    page = request.args.get('page', 1, type=int)
+    offset = (page - 1) * per_page
+
+    # Fetch the total department count for pagination
+    cursor.execute('SELECT COUNT(*) FROM department')
+    total = cursor.fetchone()[0]
+
+    # Fetch the departments for the current page along with their leaders
     cursor.execute('''
         SELECT d.dept_id, d.name, e.emp_name
         FROM department d
         LEFT JOIN employee e ON d.leader_id = e.emp_id
-    ''')
+        LIMIT ? OFFSET ?
+    ''', (per_page, offset))
     departments = cursor.fetchall()
 
-    # Fetch all employees to display in the leader selection dropdown
+    # Fetch all employees for the leader selection dropdown
     cursor.execute('SELECT emp_id, emp_name FROM employee WHERE emp_id NOT IN (SELECT leader_id FROM department WHERE leader_id IS NOT NULL)')
     employees = cursor.fetchall()
 
     conn.close()
 
+    # Calculate the total number of pages
+    total_pages = (total + per_page - 1) // per_page
+
     # Pass the departments and employees to the template
-    return render_template('add_department.html', departments=departments, employees=employees)
+    return render_template('add_department.html', departments=departments, employees=employees, page=page, total_pages=total_pages)
 
 
 @app.route('/edit_department/<int:dept_id>', methods=['GET', 'POST'])
