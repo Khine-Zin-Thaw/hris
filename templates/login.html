@@ -68,7 +68,7 @@
                           </div>
                       {% endif %}
                   
-                      <form method="POST">
+                      <form action="{{ url_for('login') }}" method="POST">
                         <div class="form-group">
                           <label for="emp_id">Employee ID</label>
                           <input type="text" class="form-control" id="emp_id" name="emp_id" required>

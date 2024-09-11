@@ -57,21 +57,38 @@ def login():
         conn = get_db()
         cursor = conn.cursor()
 
+        # Fetch the user with the given emp_id and role
         cursor.execute('''
             SELECT * FROM users WHERE emp_id = ? AND role = ?
         ''', (emp_id, input_role))
         user = cursor.fetchone()
 
+        # Check if the user exists and the password matches
         if user and bcrypt.checkpw(password.encode('utf-8'), user['password']):
             session['emp_id'] = user['emp_id']
             session['role'] = user['role']
+
+            # Fetch the employee's name and photo from the employee table
+            cursor.execute('SELECT emp_name, photo FROM employee WHERE emp_id = ?', (emp_id,))
+            result = cursor.fetchone()
+
+            if result:
+                session['username'] = result['emp_name']  # Store employee name in session
+                session['photo'] = result['photo'] if result['photo'] else 'default-avatar.jpg'  # Handle photo
+            else:
+                session['username'] = 'Unknown User'
+                session['photo'] = 'default-avatar.jpg'  # Use default photo if no photo is found
+
+            # Redirect to the index or dashboard page upon successful login
+            conn.close()
             return redirect(url_for('index'))
         else:
+            # Set error message if login fails
             session['error'] = 'Invalid login credentials or role'
-
-        conn.close()
+            conn.close()
 
     return render_template('login.html')
+
 
 @app.route('/logout')
 def logout():
@@ -630,6 +647,12 @@ def add_employee():
                     INSERT INTO payroll (emp_id, basic_salary, month, year)
                     VALUES (?, ?, ?, ?)
                 ''', (emp_id, basic_salary, current_month, current_year))
+                
+                        # Insert the employee's career information into the career table
+                cursor.execute('''
+                     INSERT INTO career (emp_id, pos_id, dept_id, team_id, status, start_date)
+                     VALUES (?, ?, ?, ?, ?, ?)
+                ''', (emp_id, position_id, department_id, None, 'new_join', join_date))  # Assuming team_id is None initially
 
                 conn.commit()
                 flash('Employee added successfully with photo!' if photo_filename else 'Employee added successfully without photo!')
@@ -1331,9 +1354,42 @@ def edit_team(team_id):
 # # Route for Career History
 @app.route('/career_transition')
 def career_transition():
-    return render_template('career_transition.html')
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+# Fetch employee data including email, phone, and photo
+    emp_id = session.get('emp_id')  # Assuming emp_id is stored in the session
+    if session.get('role') == 'staff':
+        cursor.execute('''
+    SELECT e.emp_id, e.emp_name, e.email, e.phone_number, p.position_name, e.job_status, e.gender, e.termination_date, 
+           e.employee_status, e.join_date, d.name AS department_name, e.photo
+    FROM employee e
+    JOIN position p ON e.pos_id = p.pos_id
+    JOIN department d ON p.dept_id = d.dept_id
+    WHERE e.emp_id = ?
+    ''', (emp_id,))
+    else:
+        cursor.execute('''
+    SELECT e.emp_id, e.emp_name, e.email, e.phone_number, p.position_name, e.job_status, e.gender, e.termination_date, 
+           e.employee_status, e.join_date, d.name AS department_name, e.photo
+    FROM employee e
+    JOIN position p ON e.pos_id = p.pos_id
+    JOIN department d ON p.dept_id = d.dept_id
+    ''')
 
 
+    employees = cursor.fetchall()
+
+    # GET request: Fetch the positions
+    cursor.execute('SELECT pos_id, position_name FROM position')
+    positions = cursor.fetchall()
+
+    conn.close()
+
+    return render_template('career_transition.html', positions=positions, employees=employees)
 
 @app.route('/contact_us')
 def contact_us():
@@ -1423,6 +1479,48 @@ def my_attendance():
     return render_template('my_attendance.html', 
                            positions=positions, 
                            attendance_records=attendance_records)
+
+
+@app.route('/manage_visions', methods=['GET', 'POST'])
+def manage_visions():
+    conn = get_db()
+    cursor = conn.cursor()
+    
+        # Check if there is any data in the about_us table
+    cursor.execute('SELECT * FROM about_us WHERE id = 1')
+    about_us = cursor.fetchone()
+
+    # If no data exists, insert default values (assuming id=1)
+    if not about_us:
+        cursor.execute('''
+            INSERT INTO about_us (id, mission, vision1, vision2, vision3, vision4, vision5)
+            VALUES (1, '', '', '', '', '', '')
+        ''')
+        conn.commit()
+
+
+    if request.method == 'POST':
+        mission = request.form.get('mission')
+        vision1 = request.form.get('vision1')
+        vision2 = request.form.get('vision2')
+        vision3 = request.form.get('vision3')
+        vision4 = request.form.get('vision4')
+        vision5 = request.form.get('vision5')
+
+        cursor.execute('''
+            UPDATE about_us
+            SET mission = ?, vision1 = ?, vision2 = ?, vision3 = ?, vision4 = ?, vision5 = ?
+            WHERE id = 1
+        ''', (mission, vision1, vision2, vision3, vision4, vision5))
+
+        conn.commit()
+        flash('About Us page updated successfully!')
+        return redirect(url_for('manage_visions'))
+
+    cursor.execute('SELECT * FROM about_us WHERE id = 1')
+    about_us = cursor.fetchone()
+
+    return render_template('manage_visions.html', about_us=about_us)
 
 #ideas
 # # Route for Attendance Record

@@ -19,6 +19,16 @@
   text-transform: uppercase;
 }
 
+.sidebar {
+  height: 100vh; /* Full viewport height */
+  overflow-y: auto; /* Enable vertical scrolling */
+  position: fixed; /* Fix the sidebar in place */
+  top: 0;
+  left: 0;
+  width: 250px; /* Adjust width to your layout */
+  background-color: #f8f9fa; /* Optional: Change background color */
+}
+
 /* ! For .layout-navbar-fixed added fix padding top tpo .layout-page */
 /* Detached navbar */
 .layout-navbar-fixed .layout-wrapper:not(.layout-horizontal):not(.layout-without-menu) .layout-page {
@@ -104,4 +114,33 @@
 .layout-demo-info {
   text-align: center;
   margin-top: 1rem;
+}
+
+
+/* Sidebar Styles */
+.layout-menu {
+  height: 100vh; /* Full viewport height */
+  overflow-y: auto; /* Scrollable when content overflows */
+  position: fixed; /* Fix the sidebar in place */
+  top: 0;
+  left: 0;
+  width: 250px; /* Adjust as per your layout */
+  background-color: #f8f9fa; /* Optional: Change background color */
+  padding-top: 20px;
+  scrollbar-width: thin; /* For Firefox */
+}
+
+.layout-menu .menu-inner {
+  padding-bottom: 20px;
+  width: 220px; /* Adjust sidebar width as needed */
+
+}
+
+.layout-page {
+  margin-left: 250px; /* Offset the content area based on the sidebar width */
+  padding: 20px;
+}
+
+.content-footer {
+  margin-left: 250px; /* Footer aligned with the content area */
 }
