@@ -32,11 +32,49 @@ def get_db():
     return conn
 
 @app.route('/')
+@app.route('/index')
 def index():
     if 'role' not in session:
         return redirect(url_for('login'))
-    
-    return render_template('index.html')
+
+    if session['role'] == 'staff':
+        return redirect(url_for('check_in'))
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM employee")
+    total_employees = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM employee WHERE join_date >= date('now', 'start of month')")
+    new_employees_this_month = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM department")
+    total_departments = cursor.fetchone()[0]
+
+    cursor.execute("SELECT employee_status, COUNT(*) FROM employee GROUP BY employee_status")
+    employee_status_overview = cursor.fetchall()
+
+    cursor.execute('''
+        SELECT date, COUNT(*) 
+        FROM attendance 
+        WHERE date >= date('now', 'start of month') 
+        GROUP BY date
+    ''')
+    attendance_trends = cursor.fetchall()
+
+    cursor.execute("SELECT title, small_description FROM announcements LIMIT 5")
+    announcements = cursor.fetchall()
+
+    conn.close()
+
+    return render_template('index.html', 
+                           total_employees=total_employees, 
+                           new_employees_this_month=new_employees_this_month, 
+                           total_departments=total_departments, 
+                           employee_status_overview=employee_status_overview, 
+                           attendance_trends=attendance_trends, 
+                           announcements=announcements)
 
 
 @app.route('/userbase')
@@ -79,16 +117,20 @@ def login():
                 session['username'] = 'Unknown User'
                 session['photo'] = 'default-avatar.jpg'  # Use default photo if no photo is found
 
-            # Redirect to the index or dashboard page upon successful login
             conn.close()
-            return redirect(url_for('index'))
+
+            # Redirect based on the role
+            if session['role'] == 'staff':
+                return redirect(url_for('check_in'))  # Redirect staff to check-in page
+            else:
+                return redirect(url_for('index'))  # Redirect others to index or dashboard
+
         else:
             # Set error message if login fails
             session['error'] = 'Invalid login credentials or role'
             conn.close()
 
     return render_template('login.html')
-
 
 @app.route('/logout')
 def logout():
@@ -1008,29 +1050,50 @@ def payroll_landing():
     conn = get_db()
     cursor = conn.cursor()
 
-    # Adjust the SQL query to fetch all required fields
+    # Pagination variables
+    page = request.args.get('page', 1, type=int)  # Get current page, default to 1
+    per_page = 5  # Records per page
+    offset = (page - 1) * per_page  # Calculate offset
+
     if session['role'] in ['staff', 'recruit_admin']:
         emp_id = session.get('emp_id')  # Ensure emp_id is set in the session
 
+        # Count total records for pagination
+        cursor.execute('SELECT COUNT(*) FROM payroll WHERE emp_id = ?', (emp_id,))
+        total_records = cursor.fetchone()[0]
+
+        # Fetch paginated records
         cursor.execute('''
             SELECT p.emp_id, e.emp_name AS name, p.basic_salary, p.tax, p.ssb, p.monthly_payout, 
                    p.net_salary, p.total_present, p.total_leave, p.edit_reason
             FROM payroll p
             JOIN employee e ON p.emp_id = e.emp_id
             WHERE p.emp_id = ?
-        ''', (emp_id,))
+            LIMIT ? OFFSET ?
+        ''', (emp_id, per_page, offset))
+
     else:
+        # Count total records for pagination
+        cursor.execute('SELECT COUNT(*) FROM payroll')
+        total_records = cursor.fetchone()[0]
+
+        # Fetch paginated records
         cursor.execute('''
             SELECT e.emp_id, e.emp_name AS name, p.basic_salary, p.tax, p.ssb, p.monthly_payout, 
                    p.net_salary, p.total_present, p.total_leave, p.edit_reason
             FROM payroll p
             JOIN employee e ON p.emp_id = e.emp_id
-        ''')
+            LIMIT ? OFFSET ?
+        ''', (per_page, offset))
 
     payroll_data = cursor.fetchall()
+
+    # Calculate total pages
+    total_pages = (total_records + per_page - 1) // per_page
+
     conn.close()
 
-    return render_template('payroll_landing.html', payroll_data=payroll_data)
+    return render_template('payroll_landing.html', payroll_data=payroll_data, page=page, total_pages=total_pages)
 
 @app.route('/calculate_payroll', methods=['POST'])
 def calculate_payroll():
@@ -1175,12 +1238,16 @@ def reset_payroll():
     current_year = now.strftime('%Y')
 
     try:
-        # Step 1: Insert or replace records into payroll_archive, preserving original edit_reason
+        # Step 1: Insert records into payroll_archive, avoiding duplicates
         cursor.execute('''
-            INSERT OR REPLACE INTO payroll_archive (emp_id, basic_salary, tax, ssb, total_present, total_leave, monthly_payout, net_salary, month, year, edit_reason)
+            INSERT OR IGNORE INTO payroll_archive (emp_id, basic_salary, tax, ssb, total_present, total_leave, monthly_payout, net_salary, month, year, edit_reason)
             SELECT emp_id, basic_salary, tax, ssb, total_present, total_leave, monthly_payout, net_salary, ?, ?, edit_reason
             FROM payroll
-        ''', (current_month, current_year))
+            WHERE NOT EXISTS (
+                SELECT 1 FROM payroll_archive 
+                WHERE emp_id = payroll.emp_id AND month = ? AND year = ?
+            )
+        ''', (current_month, current_year, current_month, current_year))
 
         # Step 2: Reset payroll data
         cursor.execute('''
@@ -1214,25 +1281,57 @@ def view_archived_payroll():
     cursor = conn.cursor()
 
     archived_payroll_data = []
-    selected_month = None
-    selected_year = None
+    selected_month = request.args.get('month')  # Get selected month from the query params
+    selected_year = request.args.get('year')  # Get selected year from the query params
+    page = request.args.get('page', 1, type=int)  # Get current page, default to 1
+    per_page = 5  # Records per page
 
     if request.method == 'POST':
         selected_month = request.form['month']
         selected_year = request.form['year']
+        return redirect(url_for('view_archived_payroll', month=selected_month, year=selected_year, page=1))
 
+    if selected_month and selected_year:
+        # Count total records for pagination
+        cursor.execute('''
+            SELECT COUNT(*)
+            FROM payroll_archive pa
+            JOIN employee e ON pa.emp_id = e.emp_id
+            WHERE pa.month = ? AND pa.year = ?
+        ''', (selected_month, selected_year))
+        total_records = cursor.fetchone()[0]
+
+        # Calculate offset for pagination
+        offset = (page - 1) * per_page
+
+        # Fetch paginated data
         cursor.execute('''
             SELECT pa.emp_id, e.emp_name, pa.basic_salary, pa.tax, pa.ssb, pa.monthly_payout, pa.net_salary, pa.total_present, pa.total_leave, pa.month, pa.year, pa.edit_reason
             FROM payroll_archive pa
             JOIN employee e ON pa.emp_id = e.emp_id
             WHERE pa.month = ? AND pa.year = ?
             ORDER BY e.emp_name ASC
-        ''', (selected_month, selected_year))
+            LIMIT ? OFFSET ?
+        ''', (selected_month, selected_year, per_page, offset))
 
         archived_payroll_data = cursor.fetchall()
 
-    return render_template('view_archived_payroll.html', archived_payroll_data=archived_payroll_data, selected_month=selected_month, selected_year=selected_year)
+        # Calculate total pages
+        total_pages = (total_records + per_page - 1) // per_page
 
+    else:
+        total_pages = 0  # No pages to show initially
+
+    conn.close()
+
+    return render_template(
+        'view_archived_payroll.html',
+        archived_payroll_data=archived_payroll_data,
+        selected_month=selected_month,
+        selected_year=selected_year,
+        page=page,
+        total_pages=total_pages
+    )
 
 @app.route('/my_payroll', methods=['GET'])
 def my_payroll():

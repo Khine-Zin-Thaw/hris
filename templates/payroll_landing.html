@@ -2,77 +2,113 @@
 
 {% block content %}
 
-    <!-- Page Content -->
-    <div class="container mt-4">
-        <h1>Payroll Management</h1>
-        <div class="mb-3">
-            {% if session['role'] in ['manager', 'payroll_admin'] %}
-                <form action="{{ url_for('calculate_payroll') }}" method="post" style="display:inline;">
-                    <button type="submit" class="btn btn-primary">Calculate Payroll</button>
-                </form>
-                <a class="btn btn-info" href="{{ url_for('view_archived_payroll') }}">View Archived Payroll</a>
-                <form action="{{ url_for('reset_payroll') }}" method="post" style="display:inline;">
-                    <button type="submit" class="btn btn-danger">Reset Payroll</button>
-                </form>
-                {% if session['role'] == 'manager' %}
-                    <a class="btn btn-warning" href="{{ url_for('payroll_settings') }}">Payroll Settings</a>
-                {% endif %}
-            {% elif session['role'] in ['staff', 'recruit_admin'] %}
-                <a class="btn btn-secondary" href="{{ url_for('my_payroll') }}">View My Payroll</a>
-            {% endif %}
+<!-- Page Content -->
+<div class="container-xxl flex-grow-1 container-p-y">
+    <h4 class="fw-bold py-3 mb-4">Payroll Management</h4>
+
+    <!-- Flash Messages -->
+    {% if session.get('success') %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session.pop('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-        
-        {% if 'success' in session %}
-            <div class="alert alert-success">
-                {{ session.pop('success') }}
-            </div>
-        {% elif 'error' in session %}
-            <div class="alert alert-danger">
-                {{ session.pop('error') }}
-            </div>
-        {% endif %}
-        {% if session['role'] in ['manager', 'payroll_admin'] %}
-        <h2>Employee Payroll Data</h2>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Employee ID</th>
-                    <th>Name</th>
-                    <th>Basic Salary</th>
-                    <th>Tax</th>
-                    <th>SSB</th>
-                    <th>Monthly Payout</th>
-                    <th>Net Salary</th>
-                    <th>Total Present</th>
-                    <th>Total Leave</th>
-                    <th>Edit Reason</th>
-                    {% if session['role'] in ['manager', 'payroll_admin'] %}
-                    <th>Actions</th>
-                    {% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for record in payroll_data %}
-                <tr>
-                    <td>{{ record.emp_id }}</td>
-                    <td>{{ record.name }}</td>
-                    <td>{{ record.basic_salary | default(0) }}</td>
-                    <td>{{ record.tax | default(0) }}</td>
-                    <td>{{ record.ssb | default(0) }}</td>
-                    <td>{{ record.monthly_payout | default(0) }}</td>
-                    <td>{{ record.net_salary | default(0) }}</td>
-                    <td>{{ record.total_present }}</td>
-                    <td>{{ record.total_leave }}</td>
-                    <td>{{ record.edit_reason }}</td>
-                    {% if session['role'] in ['manager', 'payroll_admin'] %}
-                    <td>
-                        <a href="{{ url_for('edit_payroll', emp_id=record.emp_id) }}" class="btn btn-warning">Edit</a>
-                    </td>
-                    {% endif %}
-                </tr>
-                {% endfor %}
-                        </table>
+    {% elif session.get('error') %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session.pop('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+
+    <!-- Payroll Actions for Managers and Payroll Admins -->
+    {% if session.get('role') in ['manager', 'payroll_admin'] %}
+    <div class="mb-4 d-flex justify-content-start gap-2">
+        <form action="{{ url_for('calculate_payroll') }}" method="post" style="display:inline;">
+            <button type="submit" class="btn btn-primary">Calculate All Employee Payroll</button>
+        </form>
+        <a href="{{ url_for('view_archived_payroll') }}" class="btn btn-info">View Archived Payroll</a>
+        <form action="{{ url_for('reset_payroll') }}" method="post" style="display:inline;">
+            <button type="submit" class="btn btn-danger">Reset Payroll</button>
+        </form>
+        {% if session.get('role') == 'manager' %}
+        <a href="{{ url_for('payroll_settings') }}" class="btn btn-warning">Payroll Settings</a>
         {% endif %}
     </div>
+    {% endif %}
 
-    {% endblock %}
+    <!-- Payroll Actions for Staff or Recruitment Admins -->
+    {% if session.get('role') in ['staff', 'recruit_admin'] %}
+    <div class="mb-4 d-flex justify-content-start">
+        <a class="btn btn-secondary" href="{{ url_for('my_payroll') }}">View My Payroll</a>
+    </div>
+    {% endif %}
+
+    <!-- Employee Payroll Data Table -->
+    {% if session.get('role') in ['manager', 'payroll_admin'] %}
+    <h4 class="py-3">Employee Payroll Data</h4>
+    <div class="card">
+        <div class="table-responsive text-nowrap">
+            <table class="table table-striped table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Basic Salary</th>
+                        <th>Tax</th>
+                        <th>SSB</th>
+                        <th>Monthly Payout</th>
+                        <th>Net Salary</th>
+                        <th>Total Present</th>
+                        <th>Total Leave</th>
+                        <th>Edit Reason</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in payroll_data %}
+                    <tr>
+                        <td>{{ record.emp_id }}</td>
+                        <td>{{ record.name }}</td>
+                        <td>{{ record.basic_salary | default(0) }}</td>
+                        <td>{{ record.tax | default(0) }}</td>
+                        <td>{{ record.ssb | default(0) }}</td>
+                        <td>{{ record.monthly_payout | default(0) }}</td>
+                        <td>{{ record.net_salary | default(0) }}</td>
+                        <td>{{ record.total_present }}</td>
+                        <td>{{ record.total_leave }}</td>
+                        <td>{{ record.edit_reason }}</td>
+                        <td>
+                            <a href="{{ url_for('edit_payroll', emp_id=record.emp_id) }}" class="btn btn-warning btn-sm">Edit Payroll Data</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+        <!-- Pagination Controls -->
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mt-4">
+                {% if page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('payroll_landing', page=page-1) }}">Previous</a>
+                </li>
+                {% endif %}
+    
+                {% for p in range(1, total_pages + 1) %}
+                <li class="page-item {% if p == page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('payroll_landing', page=p) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+    
+                {% if page < total_pages %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('payroll_landing', page=page+1) }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    
+    {% endif %}
+</div>
+
+{% endblock %}

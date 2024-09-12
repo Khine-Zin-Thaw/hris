@@ -1,9 +1,143 @@
 {% extends "base.html" %}
 
 {% block content %}
-          <!-- Content wrapper -->
-          <div class="content-wrapper">
-            <!-- Content -->
+<div class="content-wrapper">
+    <!-- Content -->
+    <div class="container-xxl flex-grow-1 container-p-y">
+      
+      <!-- Summary Statistics Overview -->
+      <div class="row">
+        <div class="col-lg-8 mb-4 order-0">
+          <div class="card">
+            <div class="d-flex align-items-end row">
+              <div class="col-sm-7">
+                <div class="card-body">
+                  <h5 class="card-title text-primary">Admin Dashboard Overview 🎉</h5>
+                  <p class="mb-4">
+                    Welcome back, Admin! You have <strong>{{ new_employees_this_month }}</strong> new employees this month.
+                  </p>
+                </div>
+              </div>
+              <div class="col-sm-5 text-center text-sm-left">
+                <div class="card-body pb-0 px-0 px-md-4">
+                  <img src="{{ url_for('static', filename='assets/img/illustrations/man-with-laptop-light.png') }}" height="140" alt="Dashboard Overview">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4 col-md-4 order-1">
+          <div class="card">
+            <div class="card-body">
+              <div class="card-title text-center">
+                <h5 class="text-muted">Active Employees</h5>
+                <h3 class="fw-bold text-primary">{{ total_employees }}</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+  <!-- Statistics Section -->
+  <div class="row">
+    <!-- Total Employees -->
+    <div class="col-lg-4 col-md-6 mb-4">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="text-muted">Total Employees</h6>
+          <h3 class="fw-bold">{{ total_employees }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- New Employees This Month -->
+    <div class="col-lg-4 col-md-6 mb-4">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="text-muted">New Employees This Month</h6>
+          <h3 class="fw-bold">{{ new_employees_this_month }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Departments -->
+    <div class="col-lg-4 col-md-6 mb-4">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="text-muted">Total Departments</h6>
+          <h3 class="fw-bold">{{ total_departments }}</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attendance Trends (Chart Section) -->
+  <div class="row">
+    <div class="col-lg-8 mb-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title">Attendance Trends (This Month)</h5>
+        </div>
+        <div class="card-body">
+          <canvas id="attendanceChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Announcements -->
+    <div class="col-lg-4 mb-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title">Recent Announcements</h5>
+        </div>
+        <div class="card-body">
+          <ul class="list-unstyled">
+            {% for announcement in announcements %}
+              <li class="mb-2">
+                <strong>{{ announcement.title }}</strong>
+                <p class="text-muted">{{ announcement.small_description }}</p>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Attendance Chart Script (Using Chart.js) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    var ctx = document.getElementById('attendanceChart').getContext('2d');
+    var attendanceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [{% for date, _ in attendance_trends %}'{{ date }}',{% endfor %}],
+            datasets: [{
+                label: 'Number of Employees Present',
+                data: [{% for _, count in attendance_trends %}{{ count }},{% endfor %}],
+                borderColor: '#007bff',
+                fill: false,
+                tension: 0.1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        color: '#000'
+                    }
+                }
+            }
+        }
+    });
+</script>
 
 {% endblock %}
-

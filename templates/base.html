@@ -173,8 +173,14 @@
                   <a class="nav-link dropdown-toggle hide-arrow d-flex align-items-center" href="javascript:void(0);" data-bs-toggle="dropdown">
                     <div class="avatar avatar-online me-2">
                       <!-- Dynamically load employee photo or fallback to default avatar -->
-                      <img src="{{ url_for('static', filename='uploads/' ~ session['photo'] if 'photo' in session else 'assets/img/favicon/favicon.webp') }}" alt="User Avatar" class="w-px-40 h-auto rounded-circle" />
-                    </div>
+                      {% if session.get('photo') == 'default-avatar.jpg' %}
+                      <!-- Show default avatar if no user photo -->
+                      <img src="{{ url_for('static', filename='assets/img/avatars/1.jpg') }}" alt="Default Avatar" class="w-px-40 h-auto rounded-circle" />
+                    {% else %}
+                      <!-- Show user's uploaded photo if available -->
+                      <img src="{{ url_for('static', filename='uploads/' ~ session['photo']) }}" alt="User Avatar" class="w-px-40 h-auto rounded-circle" />
+                    {% endif %}
+                                                </div>
                     <span class="fw-semibold">{{ session['username'] }}</span>
                   </a>
                   <ul class="dropdown-menu dropdown-menu-end">
@@ -183,8 +189,14 @@
                         <div class="d-flex align-items-center">
                           <div class="avatar avatar-online me-2">
                             <!-- Display employee photo or default avatar in the dropdown -->
-                            <img src="{{ url_for('static', filename='uploads/' ~ session['photo'] if 'photo' in session else 'assets/img/favicon/favicon.webp') }}" alt="User Avatar" class="w-px-40 h-auto rounded-circle" />
-                          </div>
+                            {% if session.get('photo') == 'default-avatar.jpg' %}
+                            <!-- Show default avatar if no user photo -->
+                            <img src="{{ url_for('static', filename='assets/img/avatars/1.jpg') }}" alt="Default Avatar" class="w-px-40 h-auto rounded-circle" />
+                            {% else %}
+                            <!-- Show user's uploaded photo if available -->
+                            <img src="{{ url_for('static', filename='uploads/' ~ session['photo']) }}" alt="User Avatar" class="w-px-40 h-auto rounded-circle" />
+                          {% endif %}
+                                                    </div>
                           <div class="flex-grow-1">
                             <span class="fw-semibold d-block">{{ session['username'] }}</span>
                             <small class="text-muted">{{ session['role'] }}</small>
