@@ -15208,20 +15208,39 @@ html:not(.layout-menu-fixed) .menu-inner-shadow {
 
 .layout-container {
   min-height: 100vh;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100vh; /* Full height of viewport */
+
 }
 
 .layout-wrapper,
 .layout-container {
   width: 100%;
   display: flex;
+  height: 100vh; /* Ensure the layout takes the full height of the viewport */
   flex: 1 1 auto;
+  flex-direction: row;
   align-items: stretch;
 }
 
-.layout-page,
-.content-wrapper,
-.content-wrapper > *,
+.layout-page {
+  flex-grow: 1;
+  padding: 0; /* Remove padding to reduce space */
+  margin: 0; /* Remove margin between sidebar and content */
+
+}
+
 .layout-menu {
+  width: 250px; /* Adjust sidebar width if needed */
+  padding: 0; /* Remove any unnecessary padding */
+  margin: 0; /* Remove margin if it adds unnecessary space */
+  background-color: #f4f5f7; /* You can customize the background color */
+
+}
+
+.content-wrapper {
   min-height: 1px;
 }
 
@@ -15273,17 +15292,20 @@ html:not(.layout-menu-fixed) .menu-inner-shadow {
 
 .layout-navbar {
   position: relative;
-  padding-top: 0.25rem;
-  padding-bottom: 0.2rem;
   height: 3.875rem;
   flex-wrap: nowrap;
   color: #697a8d;
   z-index: 2;
+  margin-bottom: 0;
+  margin-top: 0;
+  padding: 10px 20px; /* Adjust padding to control spacing */
 }
 .layout-navbar .navbar {
   transform: translate3d(0, 0, 0);
 }
 .layout-navbar .navbar-nav-right {
+  margin-left: auto;
+  padding-right: 20px;
   flex-basis: 100%;
 }
 .layout-navbar .navbar-search-wrapper .search-input,
@@ -15345,6 +15367,7 @@ html:not(.layout-menu-fixed) .menu-inner-shadow {
 @media (max-width: 1199.98px) {
   .layout-navbar .navbar-nav .nav-item.dropdown .dropdown-menu {
     position: absolute;
+    margin-right: 10px; /* Adjust this value to reduce the space between the elements */
   }
   .layout-navbar .navbar-nav .nav-item.dropdown .dropdown-menu .last-login {
     white-space: nowrap;
@@ -15765,8 +15788,9 @@ html:not(.layout-footer-fixed) .content-wrapper {
   position: absolute;
   bottom: 0;
   right: 3px;
-  width: 8px;
-  height: 8px;
+  width: 40px;
+  height: auto;
+  border-radius: 50%; /* Keep the avatar circular */
   border-radius: 100%;
   box-shadow: 0 0 0 2px #fff;
 }

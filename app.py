@@ -728,6 +728,7 @@ def check_in():
         
         conn.commit()
 
+    # Fetch attendance records for the current week
     today = datetime.now()
     start_of_week = today - timedelta(days=today.weekday())
     end_of_week = start_of_week + timedelta(days=6)
@@ -739,9 +740,18 @@ def check_in():
     ''', (session['emp_id'], start_of_week.strftime('%Y-%m-%d'), end_of_week.strftime('%Y-%m-%d')))
     
     attendance = cursor.fetchall()
+    
+    # Fetch the last 4 or 5 announcements
+    cursor.execute('''
+        SELECT id, title, small_description, photo 
+        FROM announcements 
+        ORDER BY id DESC 
+        LIMIT 4
+    ''')
+    announcements = cursor.fetchall()
+
     conn.close()
-    flash('Check In process complete.')
-    return render_template('check_in.html', attendance=attendance)
+    return render_template('check_in.html', attendance=attendance, announcements=announcements)
 
 
 @app.route('/view_attendance')
@@ -1484,16 +1494,168 @@ def my_team():
     conn.close()
     return render_template('my_team.html', departments=departments)
 
-#ideas
-# # Route for Attendance Record
-# @app.route('/attendance')
-# def attendance():
-#     return render_template('attendance.html')
+@app.route('/add_announcement', methods=['GET', 'POST'])
+def add_announcement():
+    conn = get_db()
+    cursor = conn.cursor()
 
-# # Route for Contact HR Team
-# @app.route('/contact_hr')
-# def contact_hr():
-#     return render_template('contact_hr.html')
+    # Pagination logic for announcements
+    per_page = 5  # Announcements per page
+    page = request.args.get('page', 1, type=int)
+    offset = (page - 1) * per_page
+
+    # Fetch the total announcement count for pagination
+    cursor.execute('SELECT COUNT(*) FROM announcements')
+    total_announcements = cursor.fetchone()[0]
+
+    # Fetch the announcements for the current page
+    cursor.execute('''
+        SELECT id, title, label, small_description, photo
+        FROM announcements
+        LIMIT ? OFFSET ?
+    ''', (per_page, offset))
+    announcements = cursor.fetchall()
+
+    # Calculate the total number of pages for announcements
+    total_pages = (total_announcements + per_page - 1) // per_page
+
+    if request.method == 'POST':
+        # Get form data
+        title = request.form['title']
+        label = request.form['label']
+        small_description = request.form['small_description']
+        description = request.form['description']
+
+        # Handle photo upload
+        photo_filename = None  # Default if no photo is uploaded
+        if 'photo' in request.files:
+            photo = request.files['photo']
+            if photo.filename != '':  # Check if the file has a valid filename
+                print(f"Photo detected: {photo.filename}")  # Debugging statement
+                if allowed_file(photo.filename):  # Validate the file extension
+                    photo_filename = secure_filename(photo.filename)
+                    print(f"Saving photo as: {photo_filename}")  # Debugging statement
+                    # Save the file in the configured upload folder
+                    photo.save(os.path.join(app.config['UPLOAD_FOLDER'], photo_filename))
+                else:
+                    flash('Invalid photo format. Please upload a valid image.', 'danger')
+                    return redirect(url_for('add_announcement'))
+            else:
+                flash('No selected file', 'danger')
+                return redirect(url_for('add_announcement'))
+        else:
+            flash('No photo uploaded. Please upload an image.', 'danger')
+            return redirect(url_for('add_announcement'))
+
+        # Insert data into the database
+        cursor.execute('''
+            INSERT INTO announcements (title, label, small_description, description, photo)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (title, label, small_description, description, photo_filename))
+        conn.commit()
+        flash('Announcement added successfully!', 'success')
+        return redirect(url_for('add_announcement'))
+
+    conn.close()
+
+    # Render the template with announcements and pagination information
+    return render_template('add_announcement.html', 
+                           announcements=announcements, 
+                           page=page, 
+                           total_pages=total_pages)
+
+@app.route('/edit_announcement/<int:id>', methods=['GET', 'POST'])
+def edit_announcement(id):
+    conn = get_db()  # Assuming a `get_db()` function to get the SQLite3 connection
+    cursor = conn.cursor()
+
+    # Fetch the announcement to be edited
+    cursor.execute('SELECT * FROM announcements WHERE id = ?', (id,))
+    announcement = cursor.fetchone()
+
+    if request.method == 'POST':
+        # Get form data
+        title = request.form['title']
+        label = request.form['label']
+        small_description = request.form['small_description']
+        description = request.form['description']
+
+        # Handle file upload if there is one
+        if 'photo' in request.files:
+            file = request.files['photo']
+            if file.filename != '' and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+                # Update with new photo
+                cursor.execute('''
+                    UPDATE announcements 
+                    SET title = ?, label = ?, small_description = ?, description = ?, photo = ?
+                    WHERE id = ?
+                ''', (title, label, small_description, description, filename, id))
+            else:
+                # Update without changing the photo
+                cursor.execute('''
+                    UPDATE announcements 
+                    SET title = ?, label = ?, small_description = ?, description = ?
+                    WHERE id = ?
+                ''', (title, label, small_description, description, id))
+        else:
+            # Update without changing the photo
+            cursor.execute('''
+                UPDATE announcements 
+                SET title = ?, label = ?, small_description = ?, description = ?
+                WHERE id = ?
+            ''', (title, label, small_description, description, id))
+
+        conn.commit()
+        conn.close()
+
+        flash('Announcement updated successfully!', 'success')
+        return redirect(url_for('add_announcement'))
+
+    conn.close()
+
+    return render_template('edit_announcement.html', announcement=announcement)
+
+@app.route('/delete_announcement/<int:id>', methods=['POST'])
+def delete_announcement(id):
+    conn = get_db()  # Assuming a `get_db()` function to get the SQLite3 connection
+    cursor = conn.cursor()
+
+    # Fetch the photo filename for removal from the uploads folder
+    cursor.execute('SELECT photo FROM announcements WHERE id = ?', (id,))
+    photo_filename = cursor.fetchone()
+
+    # Remove the announcement from the database
+    cursor.execute('DELETE FROM announcements WHERE id = ?', (id,))
+    conn.commit()
+    conn.close()
+
+    # If the announcement had a photo, remove it from the file system
+    if photo_filename and os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], photo_filename[0])):
+        os.remove(os.path.join(app.config['UPLOAD_FOLDER'], photo_filename[0]))
+
+    flash('Announcement deleted successfully!', 'success')
+    return redirect(url_for('add_announcement'))
+
+@app.route('/view_announcement/<int:announcement_id>')
+def view_announcement(announcement_id):
+    conn = get_db()  # Assuming a `get_db()` function to get the SQLite3 connection
+    cursor = conn.cursor()
+
+    # Fetch the announcement by ID
+    cursor.execute('SELECT * FROM announcements WHERE id = ?', (announcement_id,))
+    announcement = cursor.fetchone()
+
+    if announcement is None:
+        flash('Announcement not found', 'danger')
+        return redirect(url_for('slider'))  # Redirect to the slider page if not found
+
+    conn.close()
+
+    # Pass the announcement data to the template for detailed view
+    return render_template('view_announcement.html', announcement=announcement)
 
 # # Route for Contact IT Team
 @app.route('/about_us')

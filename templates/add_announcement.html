@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+  <h4 class="fw-bold py-3 mb-4"><span class="text-muted fw-light">Organization Management /</span> Announcement Management</h4>
+
+  <!-- Announcements Table -->
+  <div class="card mb-4">
+    <h5 class="card-header">Announcements</h5>
+    <div class="table-responsive text-nowrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Announcement ID</th>
+                    <th>Title</th>
+                    <th>Label</th>
+                    <th>Small Description</th>
+                    <th>Photo</th> <!-- New column for the photo -->
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody class="table-border-bottom-0">
+                {% for announcement in announcements %}
+                <tr>
+                    <td>{{ announcement[0] }}</td> <!-- ID -->
+                    <td>{{ announcement[1] }}</td> <!-- Title -->
+                    <td>{{ announcement[2] }}</td> <!-- Label -->
+                    <td>{{ announcement[3] }}</td> <!-- Small Description -->
+                    <td>
+                      {% if announcement[4] %} <!-- Check if a photo exists -->
+                        <img src="{{ url_for('static', filename='uploads/' ~ announcement[4]) }}" alt="{{ announcement[1] }}" width="100">
+                      {% else %}
+                        No photo
+                      {% endif %}
+                    </td>
+                    <td>
+                        <!-- Edit button -->
+                        <a href="{{ url_for('edit_announcement', id=announcement[0]) }}" class="btn btn-warning btn-sm me-1">Edit</a>
+
+                        <!-- Delete button -->
+                        <form action="{{ url_for('delete_announcement', id=announcement[0]) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this announcement?');">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div class="pagination">
+          <nav aria-label="Page navigation">
+              <ul class="pagination justify-content-center">
+                  {% if page > 1 %}
+                  <li class="page-item">
+                      <a class="page-link" href="{{ url_for('add_announcement', page=page-1) }}">Previous</a>
+                  </li>
+                  {% endif %}
+      
+                  {% for i in range(1, total_pages + 1) %}
+                  <li class="page-item {% if i == page %}active{% endif %}">
+                      <a class="page-link" href="{{ url_for('add_announcement', page=i) }}">{{ i }}</a>
+                  </li>
+                  {% endfor %}
+      
+                  {% if page < total_pages %}
+                  <li class="page-item">
+                      <a class="page-link" href="{{ url_for('add_announcement', page=page+1) }}">Next</a>
+                  </li>
+                  {% endif %}
+              </ul>
+          </nav>
+        </div>
+    </div>
+  </div>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+      <div>
+          {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+          {% endfor %}
+      </div>
+  {% endif %}
+  {% endwith %}
+
+  <!-- Add Announcement Form -->
+  <div class="row">
+      <div class="col-md-8 mx-auto">
+        <div class="card mb-4">
+          <div class="card-header d-flex align-items-center justify-content-between">
+            <small class="text-muted float-end">Add Announcement</small>
+          </div>
+          <div class="card-body">
+            <form method="POST" action="{{ url_for('add_announcement') }}" enctype="multipart/form-data">
+              <!-- Announcement Title -->
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label" for="title">Title</label>
+                <div class="col-sm-10">
+                  <div class="input-group">
+                    <span class="input-group-text">
+                      <i class="bx bx-file"></i>
+                    </span>
+                    <input
+                      type="text"
+                      id="title"
+                      name="title"
+                      class="form-control"
+                      placeholder="Type Announcement Title"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Label -->
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label" for="label">Label</label>
+                <div class="col-sm-10">
+                  <div class="input-group">
+                    <span class="input-group-text">
+                      <i class="bx bx-tag"></i>
+                    </span>
+                    <input
+                      type="text"
+                      id="label"
+                      name="label"
+                      class="form-control"
+                      placeholder="Type Label"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Small Description -->
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label" for="small_description">Small Description</label>
+                <div class="col-sm-10">
+                  <textarea class="form-control" id="small_description" name="small_description" rows="2" required></textarea>
+                </div>
+              </div>
+
+              <!-- Full Description -->
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label" for="description">Description</label>
+                <div class="col-sm-10">
+                  <textarea class="form-control" id="description" name="description" rows="5" required></textarea>
+                </div>
+              </div>
+
+              <!-- Upload Photo -->
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label" for="photo">Upload Photo</label>
+                <div class="col-sm-10">
+                  <input type="file" class="form-control-file" id="photo" name="photo" accept="image/*" required>
+                </div>
+              </div>
+
+              <!-- Submit and Return buttons -->
+              <div class="row justify-content-end">
+                <div class="col-sm-10">
+                  <button type="submit" class="btn btn-primary">Submit</button>
+                  <a class="btn btn-secondary ms-2" href="{{ url_for('index') }}">Return to Main Page</a>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+</div>
+
+{% endblock %}

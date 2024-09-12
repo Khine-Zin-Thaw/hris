@@ -1,0 +1,14 @@
+{% extends "userbase.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>{{ announcement[1] }}</h1> <!-- Title -->
+    <p><strong>Label:</strong> {{ announcement[4] }}</p> <!-- Label -->
+    <p><strong>Small Description:</strong> {{ announcement[2] }}</p> <!-- Small description -->
+    <p><strong>Description:</strong></p>
+    <p>{{ announcement[3] }}</p> <!-- Full description -->
+
+    <!-- Display the uploaded image -->
+    <img src="{{ url_for('static', filename='uploads/announcements/' ~ announcement[5]) }}" alt="{{ announcement[1] }}" class="img-fluid mt-4" />
+</div>
+{% endblock %}

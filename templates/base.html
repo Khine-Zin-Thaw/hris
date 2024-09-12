@@ -1,22 +1,11 @@
 <!DOCTYPE html>
 
-<!-- =========================================================
-* Sneat - Bootstrap 5 HTML Admin Template - Pro | v1.0.0
-==============================================================
-
-* Product Page: https://themeselection.com/products/sneat-bootstrap-html-admin-template/
-* Created by: ThemeSelection
-* License: You must have a valid license purchased in order to legally use the theme for your project.
-* Copyright ThemeSelection (https://themeselection.com)
-
-=========================================================
- -->
-<!-- beautify ignore:start -->
 <html
   lang="en"
   class="light-style layout-menu-fixed"
   dir="ltr"
   data-theme="theme-default"
+  data-assets-path="{{ url_for('static', filename='assets/') }}"
   data-template="vertical-menu-template-free"
 >
   <head>
@@ -31,6 +20,7 @@
     <meta name="description" content="" />
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='assets/img/favicon/favicon.webp') }}" />
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -43,24 +33,19 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/fonts/boxicons.css') }}" />
 
     <!-- Core CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/css/core.css') }}" class="template-customizer-core-css" /> 
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/css/core.css') }}" class="template-customizer-core-css" />
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/css/theme-default.css') }}" class="template-customizer-theme-css" />
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/demo.css') }}" />
 
     <!-- Vendors CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='fonts/boxicons.css') }}" />
-
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/vendor/libs/apex-charts/apex-charts.css') }}" />
-    <!-- Page CSS -->
 
     <!-- Helpers -->
     <script src="{{ url_for('static', filename='assets/vendor/js/helpers.js') }}"></script>
 
-
-    <!--! Template customizer & Theme config files MUST be included after core stylesheets and helpers.js in the <head> section -->
-    <!--? Config:  Mandatory theme config file contain global vars & default theme options, Set your preferred theme option in this file.  -->
+    <!-- Config -->
     <script src="{{ url_for('static', filename='assets/js/config.js') }}"></script>
-
   </head>
 
   <body>
@@ -73,10 +58,16 @@
             <a href="{{ url_for('index') }}" class="app-brand-link">
               <span class="app-brand-text demo menu-text fw-bolder ms-2">People Link</span>
             </a>
+            <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
+              <i class="bx bx-chevron-left bx-sm align-middle"></i>
+            </a>
           </div>
+
+          <div class="menu-inner-shadow"></div>
+
           <ul class="menu-inner py-1">
             <!-- Dashboard -->
-            <li class="menu-item active">
+            <li class="menu-item">
               <a href="{{ url_for('index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-home-circle"></i>
                 <div data-i18n="Analytics">Dashboard</div>
@@ -87,7 +78,7 @@
               <span class="menu-header-text">Functions for HR Manager only</span>
             </li>
             <li class="menu-item">
-              <a href="#" class="menu-link menu-toggle">
+              <a href="javascript:void(0)" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons bx bx-dock-top"></i>
                 <div data-i18n="Organization management">Organization management</div>
               </a>
@@ -107,95 +98,66 @@
                     <div data-i18n="Position Management">Manage Position</div>
                   </a>
                 </li>
-              </ul>
-            </li>
-            <li class="menu-item">
-              <a href="{{ url_for('check_employee_accounts') }}" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-lock-open-alt"></i>
-                <div data-i18n="Employee Management">Manage User</div>
-              </a>
-              <ul class="menu-sub">
                 <li class="menu-item">
-                  <a href="{{ url_for('check_employee_accounts') }}" class="menu-link">
-                    <div data-i18n="Basic">Manage Users</div>
-                  </a>
-              </ul>
-            </li>
-            <!-- Components -->
-            <li class="menu-header small text-uppercase"><span class="menu-header-text">Recuritment</span></li>
-            <!-- Cards -->
-            <!-- User interface -->
-            <li class="menu-item">
-              <a href="javascript:void(0)" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-box"></i>
-                <div data-i18n="User interface">Employee Management</div>
-              </a>
-              <ul class="menu-sub">
-                <li class="menu-item">
-                  <a href="{{ url_for('add_employee') }}" class="menu-link">
-                    <div data-i18n="Accordion">Manage Employee</div>
-                  </a>
-                </li>
-              </ul>
-            <!-- Forms & Tables -->
-            <li class="menu-header small text-uppercase"><span class="menu-header-text">Payroll</span></li>
-            <!-- Forms -->
-            <li class="menu-item">
-              <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-detail"></i>
-                <div data-i18n="Form Elements">Calculate Payroll</div>
-              </a>
-              <ul class="menu-sub">
-                <li class="menu-item">
-                  <a href="{{ url_for('payroll_landing') }}" class="menu-link">
-                    <div data-i18n="Basic Inputs">Manage Payroll</div>
-                  </a>
-                </li>
-              </ul>
-            </li>
-            </li>
-            <li class="menu-header small text-uppercase">
-              <span class="menu-header-text">Announcements</span>
-            </li>
-            
-            <li class="menu-item">
-              <a href="#" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-dock-top"></i>
-                <div data-i18n="Announcement Management">Manage Announcement</div>
-              </a>
-              <ul class="menu-sub">
-                <li class="menu-item">
-                  <a href="#" class="menu-link">
+                  <a href="{{ url_for('add_announcement') }}" class="menu-link">
                     <div data-i18n="Announcement Management">Manage Announcement</div>
                   </a>
                 </li>
               </ul>
             </li>
-            <li class="menu-header small text-uppercase"><span class="menu-header-text">Attendance</span></li>
+
             <li class="menu-item">
-              <a
-                href="{{ url_for('check_in') }}"
-                target="_blank"
-                class="menu-link"
-              >
-                <i class="menu-icon tf-icons bx bx-support"></i>
-                <div data-i18n="Support">User Side</div>
+              <a href="{{ url_for('check_employee_accounts') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-lock-open-alt"></i>
+                <div data-i18n="Manage User">Manage User</div>
               </a>
             </li>
+
+            <li class="menu-header small text-uppercase">
+              <span class="menu-header-text">Recruitment</span>
+            </li>
+
             <li class="menu-item">
-              <a
-                href="{{ url_for('view_attendance') }}"
-                class="menu-link"
-              >
+              <a href="{{ url_for('add_employee') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-box"></i>
+                <div data-i18n="Employee Management">Employee Management</div>
+              </a>
+            </li>
+
+            <li class="menu-header small text-uppercase">
+              <span class="menu-header-text">Payroll</span>
+            </li>
+            <li class="menu-item">
+              <a href="{{ url_for('payroll_landing') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-detail"></i>
+                <div data-i18n="Calculate Payroll">Calculate Payroll</div>
+              </a>
+            </li>
+
+            <li class="menu-header small text-uppercase">
+              <span class="menu-header-text">Attendance</span>
+            </li>
+            <li class="menu-item">
+              <a href="{{ url_for('view_attendance') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-file"></i>
                 <div data-i18n="Documentation">Manage Attendance</div>
               </a>
             </li>
-          </ul>
-        </li>
-        </aside>
-        <!-- / Menu -->
 
+            <li class="menu-header small text-uppercase">
+              <span class="menu-header-text">User Side</span>
+            </li>
+            <li class="menu-item">
+              <a href="{{ url_for('check_in') }}" target="_blank" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-support"></i>
+                <div data-i18n="Support">User Side</div>
+              </a>
+            </li>
+          </ul>
+        </aside>
+        <!-- / Sidebar -->
+
+        <!-- Layout content -->
         <div class="layout-page">
           <!-- Navbar -->
           <nav class="layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme" id="layout-navbar">
@@ -204,10 +166,8 @@
                 <i class="bx bx-menu bx-sm"></i>
               </a>
             </div>
-          
             <div class="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
               <ul class="navbar-nav flex-row align-items-center ms-auto">
-          
                 <!-- User Dropdown with Employee Photo -->
                 <li class="nav-item navbar-dropdown dropdown-user dropdown">
                   <a class="nav-link dropdown-toggle hide-arrow d-flex align-items-center" href="javascript:void(0);" data-bs-toggle="dropdown">
@@ -241,33 +201,25 @@
                     </li>
                   </ul>
                 </li>
-          
               </ul>
             </div>
           </nav>
-          
-          {% block content %}
-          <!-- Dynamic content will go here -->
-          {% endblock %}
+
+          <!-- Content wrapper -->
+          <div class="content-wrapper">
+            <!-- Content will be inserted here dynamically -->
+            {% block content %}
+            {% endblock %}
 
             <!-- Footer -->
             <footer class="content-footer footer bg-footer-theme">
               <div class="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column">
                 <div class="mb-2 mb-md-0">
-                  ©
-                  <script>
-                    document.write(new Date().getFullYear());
-                  </script>
-                  Thank you for using service
+                  © <script>document.write(new Date().getFullYear());</script> Thank you for using service
                 </div>
                 <div>
                   <a href="https://themeselection.com/license/" class="footer-link me-4" target="_blank">UI Reference from ThemeSelection</a>
-                  <a
-                    href="https://github.com/themeselection/sneat-html-admin-template-free/issues"
-                    target="_blank"
-                    class="footer-link me-4"
-                    >Support</a
-                  >
+                  <a href="https://github.com/themeselection/sneat-html-admin-template-free/issues" target="_blank" class="footer-link me-4">Support</a>
                 </div>
               </div>
             </footer>
@@ -275,9 +227,8 @@
 
             <div class="content-backdrop fade"></div>
           </div>
-          <!-- Content wrapper -->
         </div>
-        <!-- / Layout page -->
+        <!-- / Layout content -->
       </div>
 
       <!-- Overlay -->
@@ -286,14 +237,11 @@
     <!-- / Layout wrapper -->
 
     <!-- Core JS -->
-    <!-- build:js assets/vendor/js/core.js -->
     <script src="{{ url_for('static', filename='assets/vendor/libs/jquery/jquery.js') }}"></script>
     <script src="{{ url_for('static', filename='assets/vendor/libs/popper/popper.js') }}"></script>
     <script src="{{ url_for('static', filename='assets/vendor/js/bootstrap.js') }}"></script>
     <script src="{{ url_for('static', filename='assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}"></script>
-
     <script src="{{ url_for('static', filename='assets/vendor/js/menu.js') }}"></script>
-    <!-- endbuild -->
 
     <!-- Vendors JS -->
     <script src="{{ url_for('static', filename='assets/vendor/libs/apex-charts/apexcharts.js') }}"></script>
@@ -304,7 +252,7 @@
     <!-- Page JS -->
     <script src="{{ url_for('static', filename='assets/js/dashboards-analytics.js') }}"></script>
 
-    <!-- Place this tag in your head or just before your close body tag. -->
+    <!-- Optional GitHub Button -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
   </body>
 </html>

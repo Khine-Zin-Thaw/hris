@@ -6,6 +6,9 @@
   position: fixed;
   top: 0px;
   z-index: 10;
+  flex-grow: 1;
+  padding: 0; /* Remove padding to reduce space */
+  margin: 0; /* Remove margin between sidebar and content */
 }
 
 .bg-menu-theme .menu-header {
@@ -636,6 +639,9 @@ a:hover {
   background-color: rgba(255, 255, 255, 0.95) !important;
   -webkit-backdrop-filter: saturate(200%) blur(6px);
           backdrop-filter: saturate(200%) blur(6px);
+          margin-bottom: 0;
+          margin-top: 0;
+          padding: 10px 20px; /* Adjust padding to control spacing */        
 }
 
 .navbar-detached {

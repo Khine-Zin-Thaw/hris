@@ -12,36 +12,20 @@
         
             <!-- Carousel content -->
             <div class="slider__inner">
-                <div class="slider__contents" id="slide1">
+                {% for announcement in announcements %}
+                <div class="slider__contents" id="slide{{ loop.index }}">
                     <div class="slider__overlay"></div> <!-- Add overlay for text contrast -->
-
-                    <img src="{{ url_for('static', filename='assets/img/elements/7.jpg') }}" alt="Image 1" class="slider__image" />
-                    <h2 class="slider__caption">CodePen</h2>
-                    <p class="slider__txt">Learn how to code and share your creations.</p>
+            
+                    <!-- Image for the slider -->
+                    <img src="{{ url_for('static', filename='uploads/' ~ announcement[3]) }}" alt="{{ announcement[1] }}" class="slider__image" />
+            
+                    <!-- Caption and description -->
+                    <h2 class="slider__caption">{{ announcement[1] }}</h2> <!-- Title of the announcement -->
+                    <p class="slider__txt">{{ announcement[2] }}</p> <!-- Small description of the announcement -->
                 </div>
-                <div class="slider__contents" id="slide2">
-                    <div class="slider__overlay"></div> <!-- Add overlay for text contrast -->
-
-                    <img src="{{ url_for('static', filename='assets/img/elements/7.jpg') }}" alt="Image 2" class="slider__image" />
-                    <h2 class="slider__caption">News</h2>
-                    <p class="slider__txt">Stay updated with the latest news.</p>
-                </div>
-                <div class="slider__contents" id="slide3">
-                    <div class="slider__overlay"></div> <!-- Add overlay for text contrast -->
-
-                    <img src="{{ url_for('static', filename='assets/img/elements/7.jpg') }}" alt="Image 3" class="slider__image" />
-                    <h2 class="slider__caption">Television</h2>
-                    <p class="slider__txt">Watch your favorite shows online.</p>
-                </div>
-                <div class="slider__contents" id="slide4">
-                    <div class="slider__overlay"></div> <!-- Add overlay for text contrast -->
-
-                    <img src="{{ url_for('static', filename='assets/img/elements/7.jpg') }}" alt="Image 4" class="slider__image" />
-                    <h2 class="slider__caption">Diamond</h2>
-                    <p class="slider__txt">Discover the world of luxury jewelry.</p>
-                </div>
+                {% endfor %}
             </div>
-        
+                    
             <!-- Dots navigation -->
             <div class="carousel-controls">
                 <label for="nav1" class="carousel-control"></label>
