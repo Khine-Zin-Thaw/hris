@@ -3,38 +3,83 @@
 {% block content %}
 
 <div class="container-xxl flex-grow-1 container-p-y">
-    <h4 class="fw-bold py-3 mb-4">
-        <span class="text-muted fw-light">Team Management /</span> Edit Team
-    </h4>
-
-    <form action="{{ url_for('edit_team', team_id=team[0]) }}" method="POST">
-        <div class="mb-3">
-            <label for="team_name" class="form-label">Team Name</label>
-            <input type="text" id="team_name" name="team_name" class="form-control" value="{{ team[1] }}" required>
+    <h4 class="fw-bold py-3 mb-4">Edit Team</h4>
+     
+    <div class="card mb-4">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <small class="text-muted float-end">Editing Team</small>
         </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('edit_team', team_id=team[0]) }}">
+                <!-- Team Name -->
+                <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="team_name">Team Name</label>
+                    <div class="col-sm-10">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bx bx-group"></i>
+                            </span>
+                            <input
+                                type="text"
+                                id="team_name"
+                                name="team_name"
+                                class="form-control"
+                                value="{{ team[1] }}"
+                                required
+                            />
+                        </div>
+                    </div>
+                </div>
 
-        <div class="mb-3">
-            <label for="department_id" class="form-label">Department</label>
-            <select id="department_id" name="department_id" class="form-control" required>
-                {% for department in departments %}
-                <option value="{{ department[0] }}" {% if department[0] == team[2] %}selected{% endif %}>{{ department[1] }}</option>
-                {% endfor %}
-            </select>
+                <!-- Department -->
+                <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="department_id">Department</label>
+                    <div class="col-sm-10">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bx bx-building"></i>
+                            </span>
+                            <select class="form-control" id="department_id" name="department_id" required>
+                                {% for dept in departments %}
+                                <option value="{{ dept[0] }}" {% if dept[0] == team[2] %}selected{% endif %}>
+                                    {{ dept[1] }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Leader -->
+                <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="team_leader_id">Team Leader</label>
+                    <div class="col-sm-10">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bx bx-user"></i>
+                            </span>
+                            <select class="form-control" id="team_leader_id" name="team_leader_id">
+                                <option value="" {% if team[3] is none %}selected{% endif %}>None</option>
+                                {% for emp in employees %}
+                                <option value="{{ emp[0] }}" {% if emp[0] == team[3] %}selected{% endif %}>
+                                    {{ emp[1] }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit and Return Buttons -->
+                <div class="row justify-content-end">
+                    <div class="col-sm-10">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <a href="{{ url_for('teams') }}" class="btn btn-secondary ms-2">Return to Main Page</a>
+                    </div>
+                </div>
+            </form>
         </div>
-
-        <div class="mb-3">
-            <label for="team_leader_id" class="form-label">Team Leader</label>
-            <select id="team_leader_id" name="team_leader_id" class="form-control">
-                <option value="">None</option>
-                {% for emp in employees %}
-                <option value="{{ emp[0] }}" {% if emp[0] == team[3] %}selected{% endif %}>{{ emp[1] }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <button type="submit" class="btn btn-primary">Update Team</button>
-        <a href="{{ url_for('teams') }}" class="btn btn-secondary">Cancel</a>
-    </form>
+    </div>
 </div>
 
 {% endblock %}

@@ -3,7 +3,7 @@
 {% block content %}
 
 <div class="container-xxl flex-grow-1 container-p-y">
-  <h4 class="fw-bold py-3 mb-4"><span class="text-muted fw-light">Edit Announcement</span></h4>
+  <h4 class="fw-bold py-3 mb-4">Edit Announcement</h4>
 
   <!-- Flash messages -->
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -88,7 +88,7 @@
               <div class="row mb-3">
                 <label class="col-sm-2 col-form-label">Current Photo</label>
                 <div class="col-sm-10">
-                  <img src="{{ url_for('static', filename='uploads/announcements/' ~ announcement[5]) }}" class="img-thumbnail" alt="{{ announcement[1] }}">
+                  <img src="{{ url_for('static', filename='uploads/' ~ announcement[5]) }}" class="img-thumbnail" alt="{{ announcement[1] }}">
                 </div>
               </div>
 

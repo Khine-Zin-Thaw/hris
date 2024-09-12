@@ -2,9 +2,9 @@
 
 {% block content %}
 <div class="container-xxl flex-grow-1 container-p-y">
-    <h4 class="fw-bold py-3 mb-4">
-        <span class="text-muted fw-light">Employee Management /</span> Check Employee Accounts
-    </h4>
+    <h4 class="fw-bold py-3 mb-4">Manage User Account</h4>
+
+    <!-- Flash Messages -->
     {% with messages = get_flashed_messages() %}
     {% if messages %}
         <div class="alert alert-danger">
@@ -13,71 +13,80 @@
             {% endfor %}
         </div>
     {% endif %}
-{% endwith %}
-        <!-- Users Table -->
-        <div class="card mb-4">
-            <h5 class="card-header">Users</h5>
-            <div class="table-responsive text-nowrap">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>User ID</th>
-                            <th>Employee Name</th>
-                            <th>Role</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="table-border-bottom-0">
-                        {% for user in users_with_name %}
-                        <tr>
-                            <td>{{ user[0] }}</td>
-                            <td>{{ user[1] }}</td>
-                            <td>{{ user[2] }}</td>
-                            <td>
-                                {% if user[0] == current_emp_id %}
-                                    <span class="badge bg-label-primary me-1">Active</span>
-                                {% else %}
-                                    <span class="badge bg-label-secondary me-1">Inactive</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{{ url_for('edit_user', user_id=user[0], role=user[2]) }}" class="btn btn-warning btn-sm me-1">Edit</a>
-                                <form action="{{ url_for('delete_user', user_id=user[0], role=user[2]) }}" method="POST" style="display:inline;">
-                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    <!-- Employees with Accounts Table -->
+    {% endwith %}
+
+    <!-- Users Table -->
     <div class="card mb-4">
-        <h5 class="card-header">Employees with Accounts</h5>
+        <h5 class="card-header">Employee with User Account</h5>
         <div class="table-responsive text-nowrap">
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Employee ID</th>
+                        <th>User ID</th>
                         <th>Employee Name</th>
-                        <th>Current Role</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {% for emp in employees_with_accounts %}
+                <tbody class="table-border-bottom-0">
+                    {% for user in users_with_name %}
                     <tr>
-                        <td>{{ emp[0] }}</td>
-                        <td>{{ emp[1] }}</td>
-                        <td>{{ emp[2] }}</td>
+                        <td>{{ user[0] }}</td>
+                        <td>{{ user[1] }}</td>
+                        <td>{{ user[2] }}</td>
+                        <td>
+                            {% if user[0] == current_emp_id %}
+                                <span class="badge bg-label-primary me-1">Active</span>
+                            {% else %}
+                                <span class="badge bg-label-secondary me-1">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('edit_user', user_id=user[0], role=user[2]) }}" class="btn btn-warning btn-sm me-1">Edit</a>
+                            <form action="{{ url_for('delete_user', user_id=user[0], role=user[2]) }}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination for Users Table -->
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if page_users > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('check_employee_accounts', page_users=page_users-1, page_employees=page_employees) }}">Previous</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Previous</span>
+                </li>
+                {% endif %}
+                
+                {% for p in range(1, total_pages_users + 1) %}
+                <li class="page-item {% if page_users == p %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('check_employee_accounts', page_users=p, page_employees=page_employees) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+                
+                {% if page_users < total_pages_users %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('check_employee_accounts', page_users=page_users+1, page_employees=page_employees) }}">Next</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next</span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
     </div>
-    <!-- Employees without Accounts Table -->
+
+    <!-- Employees without Accounts Table (no pagination needed) -->
     <div class="card mb-4">
         <h5 class="card-header">Employees without Accounts</h5>
         <form action="{{ url_for('add_users') }}" method="post">
@@ -85,6 +94,9 @@
                 <table class="table">
                     <thead>
                         <tr>
+                            <th>
+                                <input type="checkbox" id="select-all">  Select-all
+                            </th>    
                             <th>Select</th>
                             <th>Employee ID</th>
                             <th>Employee Name</th>
@@ -94,6 +106,7 @@
                         {% if employees_without_accounts %}
                         {% for emp in employees_without_accounts %}
                         <tr>
+                            <td><input type="checkbox" name="emp_ids" value="{{ emp[0] }}" class="emp-checkbox"></td>
                             <td><input type="checkbox" name="emp_ids" value="{{ emp[0] }}"></td>
                             <td>{{ emp[0] }}</td>
                             <td>{{ emp[1] }}</td>
@@ -109,34 +122,37 @@
             </div>
     
             <div class="row align-items-center">
-                <!-- Password Field -->
                 <div class="col-md-4">
-                    <input class="form-control" type="password" name="password" id="password" placeholder="Enter default password" required />
+                    <input class="form-control" type="password" name="password" placeholder="Enter default password" required>
                 </div>
-            
-                <!-- Select Role Dropdown -->
                 <div class="col-md-3">
-                    <select class="form-select" name="role" id="role" required>
+                    <select class="form-select" name="role" required>
                         <option value="" disabled selected>Select Role</option>
                         <option value="staff">Staff</option>
                         <option value="employee">Employee</option>
                         <option value="manager">Manager</option>
                     </select>
                 </div>
-            
-                <!-- Create Button -->
                 <div class="col-md-3">
                     <button type="submit" class="btn btn-primary form-control">Create Selected Users</button>
                 </div>
             </div>
-            
-            <!-- Add some margin below the form for better spacing -->
-            <style>
-                .row {
-                    margin-top: 10px;
-                }
-            </style>
         </form>
     </div>
-        </div>
+</div>
+
+<script>
+    // Get the master checkbox
+    const selectAllCheckbox = document.getElementById('select-all');
+    // Get all the checkboxes for the employees
+    const checkboxes = document.querySelectorAll('.emp-checkbox');
+
+    // Add an event listener to the master checkbox
+    selectAllCheckbox.addEventListener('change', function() {
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+        });
+    });
+</script>
+
 {% endblock %}

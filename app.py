@@ -317,18 +317,29 @@ def add_position():
     cursor.execute('SELECT team_id, team_name FROM team')
     teams = cursor.fetchall()
 
-    # Fetch all positions to display in the table
+    # Pagination logic
+    page = request.args.get('page', 1, type=int)  # Get current page, default is 1
+    per_page = 5  # Number of positions to display per page
+    offset = (page - 1) * per_page
+
+    # Fetch positions with pagination
     cursor.execute('''
         SELECT p.pos_id, p.position_name, d.name AS department_name, t.team_name, p.basic_salary
         FROM position p
         LEFT JOIN department d ON p.dept_id = d.dept_id
         LEFT JOIN team t ON p.team_id = t.team_id
-    ''')
+        LIMIT ? OFFSET ?
+    ''', (per_page, offset))
     positions = cursor.fetchall()
+
+    # Count total number of positions for pagination
+    cursor.execute('SELECT COUNT(*) FROM position')
+    total_positions = cursor.fetchone()[0]
+    total_pages = (total_positions + per_page - 1) // per_page  # Calculate total pages
 
     conn.close()
 
-    return render_template('add_position.html', teams=teams, positions=positions)
+    return render_template('add_position.html', teams=teams, positions=positions, page=page, total_pages=total_pages)
 
 
 @app.route('/edit_position/<int:pos_id>', methods=['GET', 'POST'])
@@ -458,32 +469,48 @@ def delete_user(user_id, role):
 def check_employee_accounts():
     conn = get_db()
     cursor = conn.cursor()
-    
+
+    # Pagination setup for the users with accounts
+    page_users = request.args.get('page_users', 1, type=int)
+    per_page_users = 10
+    offset_users = (page_users - 1) * per_page_users
+
+    # Fetch paginated users with name
     cursor.execute('''
-    SELECT 
-        u.user_id, 
-        e.emp_name, 
-        u.role
-    FROM 
-        users u
-    JOIN 
-        employee e 
-    ON 
-        u.emp_id = e.emp_id
-    ''')
+    SELECT u.user_id, e.emp_name, u.role
+    FROM users u
+    JOIN employee e ON u.emp_id = e.emp_id
+    LIMIT ? OFFSET ?
+    ''', (per_page_users, offset_users))
     users_with_name = cursor.fetchall()
+
+    # Count total number of users
+    cursor.execute('SELECT COUNT(*) FROM users')
+    total_users = cursor.fetchone()[0]
+    total_pages_users = (total_users + per_page_users - 1) // per_page_users
+
     current_emp_id = session.get('emp_id')
 
+    # Pagination setup for employees with accounts
+    page_employees = request.args.get('page_employees', 1, type=int)
+    per_page_employees = 10
+    offset_employees = (page_employees - 1) * per_page_employees
 
-    # Fetch employees with accounts
+    # Fetch paginated employees with accounts
     cursor.execute('''
         SELECT e.emp_id, e.emp_name, u.role
         FROM employee e
         JOIN users u ON e.emp_id = u.emp_id
-    ''')
+        LIMIT ? OFFSET ?
+    ''', (per_page_employees, offset_employees))
     employees_with_accounts = cursor.fetchall()
 
-    # Fetch employees without accounts
+    # Count total number of employees with accounts
+    cursor.execute('SELECT COUNT(*) FROM employee e JOIN users u ON e.emp_id = u.emp_id')
+    total_employees_with_accounts = cursor.fetchone()[0]
+    total_pages_employees = (total_employees_with_accounts + per_page_employees - 1) // per_page_employees
+
+    # Fetch employees without accounts (no pagination)
     cursor.execute('''
         SELECT e.emp_id, e.emp_name
         FROM employee e
@@ -493,12 +520,18 @@ def check_employee_accounts():
     employees_without_accounts = cursor.fetchall()
 
     conn.close()
-    return render_template('check_employee_accounts.html',
-                           employees_with_accounts=employees_with_accounts,
-                           employees_without_accounts=employees_without_accounts,
-                           users_with_name=users_with_name, current_emp_id=current_emp_id
-                           )
 
+    return render_template(
+        'check_employee_accounts.html',
+        users_with_name=users_with_name,
+        employees_with_accounts=employees_with_accounts,
+        employees_without_accounts=employees_without_accounts,
+        current_emp_id=current_emp_id,
+        page_users=page_users,
+        total_pages_users=total_pages_users,
+        page_employees=page_employees,
+        total_pages_employees=total_pages_employees
+    )
 
 @app.route('/add_users', methods=['POST'])
 def add_users():
@@ -575,28 +608,39 @@ def add_employee():
     conn = get_db()
     cursor = conn.cursor()
 
-# Fetch employee data including email, phone, and photo
+    # Pagination setup
+    page = request.args.get('page', 1, type=int)  # Get current page, default to 1
+    per_page = 10  # Number of employees to display per page
+    offset = (page - 1) * per_page  # Calculate the offset for SQL query
+
+    # Fetch employee data including email, phone, and photo with pagination
     emp_id = session.get('emp_id')  # Assuming emp_id is stored in the session
     if session.get('role') == 'staff':
         cursor.execute('''
-    SELECT e.emp_id, e.emp_name, e.email, e.phone_number, p.position_name, e.job_status, e.gender, e.termination_date, 
-           e.employee_status, e.join_date, d.name AS department_name, e.photo
-    FROM employee e
-    JOIN position p ON e.pos_id = p.pos_id
-    JOIN department d ON p.dept_id = d.dept_id
-    WHERE e.emp_id = ?
-    ''', (emp_id,))
+            SELECT e.emp_id, e.emp_name, e.email, e.phone_number, p.position_name, e.job_status, e.gender, e.termination_date, 
+                   e.employee_status, e.join_date, d.name AS department_name, e.photo
+            FROM employee e
+            JOIN position p ON e.pos_id = p.pos_id
+            JOIN department d ON p.dept_id = d.dept_id
+            WHERE e.emp_id = ?
+            LIMIT ? OFFSET ?
+        ''', (emp_id, per_page, offset))
     else:
         cursor.execute('''
-    SELECT e.emp_id, e.emp_name, e.email, e.phone_number, p.position_name, e.job_status, e.gender, e.termination_date, 
-           e.employee_status, e.join_date, d.name AS department_name, e.photo
-    FROM employee e
-    JOIN position p ON e.pos_id = p.pos_id
-    JOIN department d ON p.dept_id = d.dept_id
-    ''')
-
+            SELECT e.emp_id, e.emp_name, e.email, e.phone_number, p.position_name, e.job_status, e.gender, e.termination_date, 
+                   e.employee_status, e.join_date, d.name AS department_name, e.photo
+            FROM employee e
+            JOIN position p ON e.pos_id = p.pos_id
+            JOIN department d ON p.dept_id = d.dept_id
+            LIMIT ? OFFSET ?
+        ''', (per_page, offset))
 
     employees = cursor.fetchall()
+
+    # Count total employees for pagination
+    cursor.execute('SELECT COUNT(*) FROM employee')
+    total_employees = cursor.fetchone()[0]
+    total_pages = (total_employees + per_page - 1) // per_page  # Calculate total pages
 
     if request.method == 'POST':
         # Capture form data
@@ -620,7 +664,7 @@ def add_employee():
         if not emp_name or not email or not phone or not position_id or not job_status or not join_date or not employee_status:
             flash('All fields are required!')
             return redirect(url_for('add_employee'))
-        
+
         # Handle photo upload
         photo_filename = None  # Default if no photo is uploaded
         if photo and photo.filename != '':  # Check if the file exists
@@ -662,11 +706,11 @@ def add_employee():
                     INSERT INTO payroll (emp_id, basic_salary, month, year)
                     VALUES (?, ?, ?, ?)
                 ''', (emp_id, basic_salary, current_month, current_year))
-                
-                        # Insert the employee's career information into the career table
+
+                # Insert the employee's career information into the career table
                 cursor.execute('''
-                     INSERT INTO career (emp_id, pos_id, dept_id, team_id, status, start_date)
-                     VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO career (emp_id, pos_id, dept_id, team_id, status, start_date)
+                    VALUES (?, ?, ?, ?, ?, ?)
                 ''', (emp_id, position_id, department_id, None, 'new_join', join_date))  # Assuming team_id is None initially
 
                 conn.commit()
@@ -687,9 +731,87 @@ def add_employee():
 
     conn.close()
 
-    return render_template('add_employee.html', positions=positions, employees=employees)
+    return render_template('add_employee.html', positions=positions, employees=employees, page=page, total_pages=total_pages)
 
 
+@app.route('/edit_employee/<int:emp_id>', methods=['GET', 'POST'])
+def edit_employee(emp_id):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Fetch the employee data to pre-fill the form
+    cursor.execute('''
+        SELECT e.emp_id, e.emp_name, e.email, e.phone_number, p.pos_id, e.job_status, e.gender, e.join_date, e.employee_status, e.termination_date, e.photo
+        FROM employee e
+        JOIN position p ON e.pos_id = p.pos_id
+        WHERE e.emp_id = ?
+    ''', (emp_id,))
+    employee = cursor.fetchone()
+
+    # Fetch positions for the dropdown
+    cursor.execute('SELECT pos_id, position_name FROM position')
+    positions = cursor.fetchall()
+
+    if request.method == 'POST':
+        # Capture form data
+        emp_name = request.form.get('name')
+        email = request.form.get('email')
+        phone = request.form.get('phone')
+        position_id = request.form.get('position')
+        job_status = request.form.get('job_status')
+        gender = request.form.get('gender')
+        join_date = request.form.get('join_date')
+        employee_status = request.form.get('employee_status')
+        termination_date = request.form.get('termination_date') or None
+
+        # Handle profile picture upload
+        photo = request.files.get('photo')
+        if photo and photo.filename != '':
+            if allowed_file(photo.filename):  # Assuming you have a function 'allowed_file' to validate file types
+                photo_filename = secure_filename(photo.filename)
+                photo.save(os.path.join(app.config['UPLOAD_FOLDER'], photo_filename))
+            else:
+                flash('Invalid photo format', 'danger')
+                return redirect(url_for('edit_employee', emp_id=emp_id))
+        else:
+            photo_filename = employee[10]  # Keep old photo if no new one is uploaded
+
+        try:
+            # Update the employee data
+            cursor.execute('''
+                UPDATE employee 
+                SET emp_name = ?, email = ?, phone_number = ?, pos_id = ?, job_status = ?, gender = ?, join_date = ?, employee_status = ?, termination_date = ?, photo = ?
+                WHERE emp_id = ?
+            ''', (emp_name, email, phone, position_id, job_status, gender, join_date, employee_status, termination_date, photo_filename, emp_id))
+
+            conn.commit()
+            flash('Employee updated successfully!', 'success')
+        except sqlite3.Error as e:
+            conn.rollback()
+            flash(f'An error occurred: {e}', 'danger')
+
+        return redirect(url_for('add_employee'))
+
+    conn.close()
+    return render_template('edit_employee.html', employee=employee, positions=positions)
+
+
+@app.route('/delete_employee/<int:emp_id>', methods=['POST'])
+def delete_employee(emp_id):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    try:
+        # Delete the employee from the database
+        cursor.execute('DELETE FROM employee WHERE emp_id = ?', (emp_id,))
+        conn.commit()
+        flash('Employee deleted successfully!', 'success')
+    except sqlite3.Error as e:
+        conn.rollback()
+        flash(f'An error occurred: {e}', 'danger')
+
+    conn.close()
+    return redirect(url_for('add_employee'))
 
 
 @app.route('/check_in', methods=['GET', 'POST'])
@@ -754,38 +876,128 @@ def check_in():
     return render_template('check_in.html', attendance=attendance, announcements=announcements)
 
 
-@app.route('/view_attendance')
+@app.route('/view_attendance', methods=['GET', 'POST'])
 def view_attendance():
     if 'role' not in session:
         return redirect(url_for('login'))
 
     conn = get_db()
     cursor = conn.cursor()
-    
-    # Get attendance for this week
-    today = datetime.now()
 
-    start_of_month = today.replace(day=1)
+    # Manually add attendance (if the form is submitted)
+    if request.method == 'POST':
+        emp_id = request.form.get('emp_id')
+        date = request.form.get('date')
+        status = request.form.get('status')
 
-    if today.month == 12:  # If it's December, go to January of the next year
-        end_of_month = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
-    else:
-        end_of_month = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
-    
-    if session['role'] in ['manager', 'payroll_admin']:
+        # Check if the attendance record already exists
         cursor.execute('''
-    SELECT employee.emp_id, employee.emp_name, attendance.date, attendance.status
-    FROM attendance
-    JOIN employee ON attendance.emp_id = employee.emp_id
-    WHERE attendance.date BETWEEN ? AND ?
-        ''', (start_of_month.strftime('%Y-%m-%d'), end_of_month.strftime('%Y-%m-%d')))
-    else:
-        return redirect(url_for('check_in'))
+            SELECT attendance_id FROM attendance
+            WHERE emp_id = ? AND date = ?
+        ''', (emp_id, date))
+        existing_record = cursor.fetchone()
+
+        if existing_record:
+            flash('Attendance for this date already exists.', 'danger')
+        else:
+            # Insert the new attendance record
+            cursor.execute('''
+                INSERT INTO attendance (emp_id, date, status)
+                VALUES (?, ?, ?)
+            ''', (emp_id, date, status))
+            conn.commit()
+            flash('Attendance added successfully!', 'success')
+
+    # Pagination setup
+    page = request.args.get('page', 1, type=int)
+    per_page = 10  # Show 10 records per page
+    offset = (page - 1) * per_page
+
+    # Get the current month
+    today = datetime.now()
+    start_of_month = today.replace(day=1)
+    end_of_month = (start_of_month + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+
+    # Fetch attendance records for the whole month with pagination
+    cursor.execute('''
+        SELECT a.emp_id, e.emp_name, a.date, a.status
+        FROM attendance a
+        JOIN employee e ON a.emp_id = e.emp_id
+        WHERE a.date BETWEEN ? AND ?
+        ORDER BY a.date DESC
+        LIMIT ? OFFSET ?
+    ''', (start_of_month.strftime('%Y-%m-%d'), end_of_month.strftime('%Y-%m-%d'), per_page, offset))
     
     attendance = cursor.fetchall()
+
+    # Count total attendance records for pagination
+    cursor.execute('''
+        SELECT COUNT(*) FROM attendance
+        WHERE date BETWEEN ? AND ?
+    ''', (start_of_month.strftime('%Y-%m-%d'), end_of_month.strftime('%Y-%m-%d')))
+    total_records = cursor.fetchone()[0]
+
     conn.close()
 
-    return render_template('view_attendance.html', attendance=attendance)
+    # Pass total pages count and current page for pagination
+    total_pages = (total_records + per_page - 1) // per_page
+
+    return render_template('view_attendance.html', attendance=attendance, page=page, total_pages=total_pages)
+
+
+@app.route('/edit_attendance/<int:emp_id>/<date>', methods=['GET', 'POST'])
+def edit_attendance(emp_id, date):
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Fetch the existing attendance record
+    cursor.execute('''
+        SELECT status FROM attendance
+        WHERE emp_id = ? AND date = ?
+    ''', (emp_id, date))
+    attendance_record = cursor.fetchone()
+
+    if request.method == 'POST':
+        status = request.form.get('status')
+
+        # Update attendance status
+        cursor.execute('''
+            UPDATE attendance
+            SET status = ?
+            WHERE emp_id = ? AND date = ?
+        ''', (status, emp_id, date))
+
+        conn.commit()
+        conn.close()
+
+        flash('Attendance updated successfully!', 'success')
+        return redirect(url_for('view_attendance'))
+
+    conn.close()
+    return render_template('edit_attendance.html', emp_id=emp_id, date=date, status=attendance_record['status'])
+
+@app.route('/delete_attendance/<int:emp_id>/<date>', methods=['POST'])
+def delete_attendance(emp_id, date):
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Delete the attendance record
+    cursor.execute('''
+        DELETE FROM attendance
+        WHERE emp_id = ? AND date = ?
+    ''', (emp_id, date))
+
+    conn.commit()
+    conn.close()
+
+    flash('Attendance record deleted successfully!', 'success')
+    return redirect(url_for('view_attendance'))
 
 
 @app.route('/payroll_landing', methods=['GET'])
@@ -1085,32 +1297,29 @@ def payroll():
     return render_template('my_payroll.html', payroll_data=payroll_data)
 
 
-@app.route('/add_teams', methods=['GET', 'POST'])
-def add_teams():
+@app.route('/teams', methods=['GET', 'POST'])
+def teams():
     conn = get_db()
     cursor = conn.cursor()
 
+    # Handle form submission for adding a team
     if request.method == 'POST':
         team_name = request.form.get('team_name')
         department_id = request.form.get('department_id')
         team_leader_id = request.form.get('leader_id')
 
-        # Validate form fields (team name and department are required)
         if not team_name or not department_id:
             flash('Team name and department are required!')
-            return redirect(url_for('add_teams'))
+            return redirect(url_for('teams'))
 
         try:
-            # Insert the new team into the team table
-            if team_leader_id:  # If a leader is provided
+            if team_leader_id:
                 cursor.execute('''
                     INSERT INTO team (team_name, dept_id, leader_id) 
                     VALUES (?, ?, ?)
                 ''', (team_name, department_id, team_leader_id))
-
-                # Update the employee to reflect their new team leader role
                 cursor.execute('UPDATE employee SET is_team_leader = 1 WHERE emp_id = ?', (team_leader_id,))
-            else:  # If no leader is provided
+            else:
                 cursor.execute('''
                     INSERT INTO team (team_name, dept_id, leader_id) 
                     VALUES (?, ?, NULL)
@@ -1123,12 +1332,26 @@ def add_teams():
             conn.rollback()
             flash(f'An error occurred: {e}')
 
-        finally:
-            conn.close()
+    # Pagination settings
+    per_page = 5  # Number of teams per page
+    page = request.args.get('page', 1, type=int)  # Get the current page from query params, default to 1
+    offset = (page - 1) * per_page  # Calculate the offset
 
-        return redirect(url_for('teams'))
+    # Fetch total number of teams for pagination
+    cursor.execute('SELECT COUNT(*) FROM team')
+    total_teams = cursor.fetchone()[0]
+    
+    # Fetch teams with departments and leaders for the current page
+    cursor.execute('''
+        SELECT t.team_id, t.team_name, d.name AS department_name, e.emp_name AS leader_name
+        FROM team t
+        LEFT JOIN department d ON t.dept_id = d.dept_id
+        LEFT JOIN employee e ON t.leader_id = e.emp_id
+        LIMIT ? OFFSET ?
+    ''', (per_page, offset))
+    teams = cursor.fetchall()
 
-    # Fetch departments for selection
+    # Fetch departments for the dropdown
     cursor.execute('SELECT dept_id, name FROM department')
     departments = cursor.fetchall()
 
@@ -1139,29 +1362,17 @@ def add_teams():
     ''')
     employees = cursor.fetchall()
 
-    conn.close()
-
-    return render_template('add_teams.html', departments=departments, employees=employees)
-
-
-@app.route('/teams')
-def teams():
-    conn = get_db()
-    cursor = conn.cursor()
-
-    # Fetch teams with their departments and leaders
-    cursor.execute('''
-        SELECT t.team_id, t.team_name, d.name AS department_name, e.emp_name AS leader_name
-        FROM team t
-        LEFT JOIN department d ON t.dept_id = d.dept_id
-        LEFT JOIN employee e ON t.leader_id = e.emp_id
-    ''')
-    teams = cursor.fetchall()
+    # Calculate total pages for pagination
+    total_pages = (total_teams + per_page - 1) // per_page
 
     conn.close()
 
-    return render_template('teams.html', teams=teams)
-
+    return render_template('teams.html', 
+                           teams=teams, 
+                           departments=departments, 
+                           employees=employees, 
+                           page=page, 
+                           total_pages=total_pages)
 
 @app.route('/delete_team/<int:team_id>', methods=['POST'])
 def delete_team(team_id):
@@ -1169,30 +1380,15 @@ def delete_team(team_id):
     cursor = conn.cursor()
 
     try:
-        # Fetch the leader of the team
-        cursor.execute('SELECT leader_id FROM team WHERE team_id = ?', (team_id,))
-        leader_id = cursor.fetchone()
-
-        # Reset the team_id and is_team_leader for employees in this team
-        cursor.execute('UPDATE employee SET team_id = NULL WHERE team_id = ?', (team_id,))
-
-        # Reset the team leader's `is_team_leader` flag if applicable
-        if leader_id and leader_id[0]:
-            cursor.execute('UPDATE employee SET is_team_leader = 0 WHERE emp_id = ?', (leader_id[0],))
-
         # Delete the team
         cursor.execute('DELETE FROM team WHERE team_id = ?', (team_id,))
-
         conn.commit()
-        flash('Team deleted successfully!')
-
-    except Exception as e:
+        flash('Team deleted successfully!', 'success')
+    except sqlite3.Error as e:
+        flash(f'An error occurred while deleting the team: {e}', 'danger')
         conn.rollback()
-        flash(f'An error occurred: {e}')
 
-    finally:
-        conn.close()
-
+    conn.close()
     return redirect(url_for('teams'))
 
 
@@ -1306,22 +1502,21 @@ def edit_team(team_id):
     conn = get_db()
     cursor = conn.cursor()
 
-    if request.method == 'POST':
-        team_name = request.form.get('team_name')
-        department_id = request.form.get('department_id')
-        new_team_leader_id = request.form.get('team_leader_id')
-        
-        # Validate the form data
-        if not team_name or not department_id:
-            flash('Team name and department are required.')
-            return redirect(url_for('edit_team', team_id=team_id))
-        
-        try:
+    try:
+        if request.method == 'POST':
+            team_name = request.form.get('team_name')
+            department_id = request.form.get('department_id')
+            new_team_leader_id = request.form.get('team_leader_id')
+
+            # Validate the form data
+            if not team_name or not department_id:
+                flash('Team name and department are required.', 'danger')
+                return redirect(url_for('edit_team', team_id=team_id))
+
             # Get the current leader's ID (before the update)
             cursor.execute('SELECT leader_id FROM team WHERE team_id = ?', (team_id,))
             current_team_leader = cursor.fetchone()
 
-            # If there is a current leader, safely extract the ID
             current_team_leader_id = current_team_leader[0] if current_team_leader else None
 
             # Update the team with the new details
@@ -1340,40 +1535,38 @@ def edit_team(team_id):
                 cursor.execute('UPDATE employee SET is_team_leader = 1 WHERE emp_id = ?', (new_team_leader_id,))
 
             conn.commit()
-            flash('Team updated successfully!')
+            flash('Team updated successfully!', 'success')
 
-        except sqlite3.Error as e:
-            conn.rollback()
-            flash(f'An error occurred: {e}')
+            return redirect(url_for('teams'))
 
-        finally:
-            conn.close()
+        # GET request: Fetch the current team details to display in the form
+        cursor.execute('SELECT team_id, team_name, dept_id, leader_id FROM team WHERE team_id = ?', (team_id,))
+        team = cursor.fetchone()
 
+        if not team:
+            flash('Team not found.', 'danger')
+            return redirect(url_for('teams'))
+
+        # Fetch the list of departments and employees for dropdowns
+        cursor.execute('SELECT dept_id, name FROM department')
+        departments = cursor.fetchall()
+
+        cursor.execute('''
+            SELECT emp_id, emp_name 
+            FROM employee 
+            WHERE emp_id NOT IN (SELECT leader_id FROM team WHERE leader_id IS NOT NULL) 
+            OR emp_id = ?
+        ''', (team[3],))
+        employees = cursor.fetchall()
+
+        conn.close()
+
+        return render_template('edit_teams.html', team=team, departments=departments, employees=employees)
+
+    except Exception as e:
+        flash(f"An error occurred: {str(e)}", 'danger')
+        conn.rollback()
         return redirect(url_for('teams'))
-
-    # GET request: Fetch the current team details to display in the form
-    cursor.execute('SELECT team_id, team_name, dept_id, leader_id FROM team WHERE team_id = ?', (team_id,))
-    team = cursor.fetchone()
-
-    if not team:
-        flash('Team not found.')
-        return redirect(url_for('teams'))
-
-    # Fetch the list of departments and employees for dropdowns
-    cursor.execute('SELECT dept_id, name FROM department')
-    departments = cursor.fetchall()
-
-    cursor.execute('''
-        SELECT emp_id, emp_name 
-        FROM employee 
-        WHERE emp_id NOT IN (SELECT leader_id FROM team WHERE leader_id IS NOT NULL) 
-        OR emp_id = ?
-    ''', (team[3],))
-    employees = cursor.fetchall()
-
-    conn.close()
-
-    return render_template('edit_teams.html', team=team, departments=departments, employees=employees)
 
 
 @app.route('/contact_us')

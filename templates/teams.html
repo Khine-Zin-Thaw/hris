@@ -1,16 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-
 <div class="container-xxl flex-grow-1 container-p-y">
     <h4 class="fw-bold py-3 mb-4">
-        <span class="text-muted fw-light">Organization Management /</span> Teams
+        Teams management
     </h4>
 
     <div class="card mb-4">
         <h5 class="card-header">Teams</h5>
         <div class="table-responsive text-nowrap">
-            <a class="btn btn-primary mb-3" href="{{ url_for('add_teams') }}">Add Team</a>
             <table class="table">
                 <thead>
                     <tr>
@@ -39,9 +37,95 @@
                     {% endfor %}
                 </tbody>
             </table>
+
+            <!-- Pagination Controls -->
+            <nav aria-label="Page navigation example">
+                <ul class="pagination justify-content-center">
+                    {% if page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('teams', page=page-1) }}">Previous</a>
+                    </li>
+                    {% endif %}
+
+                    {% for i in range(1, total_pages + 1) %}
+                    <li class="page-item {% if i == page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('teams', page=i) }}">{{ i }}</a>
+                    </li>
+                    {% endfor %}
+
+                    {% if page < total_pages %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('teams', page=page+1) }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+        <!-- Flash messages for form submission -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div>
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% endwith %}
+    
+    <!-- Add Team Form -->
+    <div class="card mb-4">
+        <h5 class="card-header">Add New Team</h5>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('teams') }}">
+                <!-- Team Name -->
+                <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="team_name">Team Name</label>
+                    <div class="col-sm-10">
+                        <input type="text" id="team_name" name="team_name" class="form-control" placeholder="Team Name" required />
+                    </div>
+                </div>
+
+                <!-- Department Selection -->
+                <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="department_id">Department</label>
+                    <div class="col-sm-10">
+                        <select class="form-select" id="department_id" name="department_id" required>
+                            <option value="" disabled selected>Select a Department</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept[0] }}">{{ dept[1] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Team Leader Selection -->
+                <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="leader_id">Team Leader</label>
+                    <div class="col-sm-10">
+                        <select class="form-select" id="leader_id" name="leader_id">
+                            <option value="" selected>No Leader</option>
+                            {% for emp in employees %}
+                            <option value="{{ emp[0] }}">{{ emp[1] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="row justify-content-end">
+                    <div class="col-sm-10">
+                        <button type="submit" class="btn btn-primary">Add Team</button>
+                        <a class="btn btn-secondary ms-2" href="{{ url_for('index') }}">Return to Main Page</a>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
 </div>
-
 {% endblock %}

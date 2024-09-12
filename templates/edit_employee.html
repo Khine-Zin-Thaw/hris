@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-xxl flex-grow-1 container-p-y">
+  <h4 class="fw-bold py-3 mb-4">Edit Employee</h4>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+      <div>
+          {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+          {% endfor %}
+      </div>
+  {% endif %}
+  {% endwith %}
+
+  <!-- Edit Employee Form -->
+  <div class="row">
+      <div class="col-md-8 mx-auto">
+        <div class="card mb-4">
+          <div class="card-header d-flex align-items-center justify-content-between">
+            <small class="text-muted float-end">Edit Employee</small>
+          </div>
+          <div class="card-body">
+            <form method="POST" action="{{ url_for('edit_employee', emp_id=employee[0]) }}" enctype="multipart/form-data">
+
+              <!-- Profile Picture -->
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label">Profile Photo</label>
+                <div class="col-sm-10">
+                  <!-- Current Profile Picture -->
+                  {% if employee[10] %}
+                  <img id="profilePreview" src="{{ url_for('static', filename='uploads/' ~ employee[10]) }}" alt="Profile Photo" class="img-fluid rounded-circle mb-3" width="150" height="150">
+                  {% else %}
+                  <img id="profilePreview" src="{{ url_for('static', filename='assets/img/favicon/favicon.webp') }}" alt="Profile Photo" class="img-fluid rounded-circle mb-3" width="150" height="150">
+                  {% endif %}
+                  
+                  <!-- File Upload for New Profile Picture -->
+                  <input type="file" class="form-control-file" id="photo" name="photo" accept="image/*" onchange="previewImage(event)">
+                  
+                  <!-- JavaScript for Previewing Image -->
+                  <script>
+                      function previewImage(event) {
+                          var reader = new FileReader();
+                          reader.onload = function() {
+                              var output = document.getElementById('profilePreview');
+                              output.src = reader.result; // Update the image preview
+                          };
+                          reader.readAsDataURL(event.target.files[0]);
+                      }
+                  </script>
+                </div>
+              </div>
+
+              <!-- Employee Name -->
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label" for="name">Name</label>
+                <div class="col-sm-10">
+                  <div class="input-group">
+                    <span class="input-group-text">
+                      <i class="bx bx-user"></i>
+                    </span>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      class="form-control"
+                      value="{{ employee[1] }}"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Email -->
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label" for="email">Email</label>
+                <div class="col-sm-10">
+                  <div class="input-group">
+                    <span class="input-group-text">
+                      <i class="bx bx-envelope"></i>
+                    </span>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      class="form-control"
+                      value="{{ employee[2] }}"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Phone Number -->
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label" for="phone">Phone</label>
+                <div class="col-sm-10">
+                  <div class="input-group">
+                    <span class="input-group-text">
+                      <i class="bx bx-phone"></i>
+                    </span>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      class="form-control"
+                      value="{{ employee[3] }}"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Position -->
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label" for="position">Position</label>
+                <div class="col-sm-10">
+                  <div class="input-group">
+                    <span class="input-group-text">
+                      <i class="bx bx-briefcase"></i>
+                    </span>
+                    <select class="form-control" id="position" name="position" required>
+                      {% for pos in positions %}
+                      <option value="{{ pos[0] }}" {% if pos[0] == employee[4] %}selected{% endif %}>
+                        {{ pos[1] }}
+                      </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Job Status -->
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label" for="job_status">Job Status</label>
+                <div class="col-sm-10">
+                  <div class="input-group">
+                    <span class="input-group-text">
+                      <i class="bx bx-briefcase-alt"></i>
+                    </span>
+                    <select class="form-control" id="job_status" name="job_status" required>
+                      <option value="Full Time" {% if employee[5] == 'Full Time' %}selected{% endif %}>Full Time</option>
+                      <option value="Part Time" {% if employee[5] == 'Part Time' %}selected{% endif %}>Part Time</option>
+                      <option value="Contract" {% if employee[5] == 'Contract' %}selected{% endif %}>Contract</option>
+                      <option value="Intern" {% if employee[5] == 'Intern' %}selected{% endif %}>Intern</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Gender -->
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label" for="gender">Gender</label>
+                <div class="col-sm-10">
+                  <div class="input-group">
+                    <span class="input-group-text">
+                      <i class="bx bx-male-female"></i>
+                    </span>
+                    <select class="form-control" id="gender" name="gender" required>
+                      <option value="Male" {% if employee[6] == 'Male' %}selected{% endif %}>Male</option>
+                      <option value="Female" {% if employee[6] == 'Female' %}selected{% endif %}>Female</option>
+                      <option value="Other" {% if employee[6] == 'Other' %}selected{% endif %}>Other</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Join Date -->
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label" for="join_date">Join Date</label>
+                <div class="col-sm-10">
+                  <input
+                    type="date"
+                    id="join_date"
+                    name="join_date"
+                    class="form-control"
+                    value="{{ employee[7] }}"
+                    required
+                  />
+                </div>
+              </div>
+
+              <!-- Termination Date -->
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label" for="termination_date">Termination Date</label>
+                <div class="col-sm-10">
+                  <input
+                    type="date"
+                    id="termination_date"
+                    name="termination_date"
+                    class="form-control"
+                    value="{{ employee[9] }}"
+                  />
+                </div>
+              </div>
+
+              <!-- Employee Status -->
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label" for="employee_status">Employee Status</label>
+                <div class="col-sm-10">
+                  <div class="input-group">
+                    <span class="input-group-text">
+                      <i class="bx bx-check-circle"></i>
+                    </span>
+                    <select class="form-control" id="employee_status" name="employee_status" required>
+                      <option value="Active" {% if employee[8] == 'Active' %}selected{% endif %}>Active</option>
+                      <option value="Inactive" {% if employee[8] == 'Inactive' %}selected{% endif %}>Inactive</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Save Changes and Cancel Buttons -->
+              <div class="row justify-content-end">
+                <div class="col-sm-10">
+                  <button type="submit" class="btn btn-primary">Save Changes</button>
+                  <a class="btn btn-secondary ms-2" href="{{ url_for('add_employee') }}">Cancel</a>
+                </div>
+              </div>
+              
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+</div>
+
+{% endblock %}
