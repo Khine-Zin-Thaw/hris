@@ -1,22 +1,27 @@
 {% extends "userbase.html" %}
 
 {% block content %}
+    <div class="container mt-4">
+        <h1 class="text-center mb-4">Attendance Records</h1>
 
-<table>
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for record in attendance_records %}
-        <tr>
-            <td>{{ record[0] }}</td> <!-- attendance_date -->
-            <td>{{ record[1] }}</td> <!-- status -->
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+        <div class="attendance-card-container">
+            {% for record in attendance_records %}
+            <div class="attendance-card">
+                <div class="card-date">
+                    <h4>{{ record[0] }}</h4>
+                </div>
+                <div class="card-status">
+                    <span class="{{ 'status-present' if record[1] == 'Present' else 'status-absent' }}">
+                        {{ record[1] }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
 
+        <!-- Return to Homepage Button -->
+        <div class="return-button-container text-center mt-4">
+            <a href="{{ url_for('check_in') }}" class="return-button">Return to Homepage</a>
+        </div>
+    </div>
 {% endblock %}

@@ -621,25 +621,25 @@ def myinfo():
     cursor = conn.cursor()
     emp_id = session.get('emp_id')  # Assuming emp_id is stored in the session
 
-    # Fetch employee information along with department and team details
+    # Fetch employee information including phone_number and photo
     cursor.execute('''
-        SELECT e.emp_id, e.emp_name, p.position_name, e.job_status, e.gender, e.termination_date, 
-               e.employee_status, e.join_date, d.name AS department_name, t.team_name
+        SELECT e.emp_id, e.emp_name, e.phone_number, e.photo, p.position_name, e.job_status, e.gender, 
+               e.termination_date, e.employee_status, e.join_date, d.name AS department_name, t.team_name
         FROM employee e
         JOIN position p ON e.pos_id = p.pos_id
         JOIN department d ON p.dept_id = d.dept_id
         LEFT JOIN team t ON d.leader_id = t.team_id  -- Joining the team table to get team details
         WHERE e.emp_id = ?
     ''', (emp_id,))
-    employees = cursor.fetchall()
-
-    # Fetch positions for display in the template (if needed)
-    cursor.execute('SELECT pos_id, position_name FROM position')
-    positions = cursor.fetchall()
-
+    
+    employee = cursor.fetchone()  # Fetch one record for the specific employee
+    
     conn.close()
 
-    return render_template('myinfo.html', positions=positions, employees=employees)
+    if not employee:
+        return "Employee not found", 404  # Handle case if employee is not found
+
+    return render_template('myinfo.html', employee=employee)
 
 
 @app.route('/add_employee', methods=['GET', 'POST'])

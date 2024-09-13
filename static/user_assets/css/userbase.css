@@ -211,16 +211,16 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 10px; /* Space between dropdown and button */
+  gap: 8px; /* Reduced space between dropdown and button */
 }
 
 .form-control {
-  max-width: 250px;
-  padding: 8px;
-  border-radius: 5px;
+  max-width: 80px; /* Reduced width */
+  padding: 6px; /* Smaller padding for a more compact form */
+  border-radius: 4px;
   border: 1px solid #ced4da;
   background-color: white;
-  font-size: 1rem;
+  font-size: 0.9rem; /* Slightly smaller font size */
 }
 
 .submit-btn {
@@ -263,7 +263,16 @@ body {
 /* Icon section */
 .icon-section {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 3 icons per row by default */
+  grid-template-columns: repeat(6, 1fr); /* 3 icons per row by default */
+  gap: 40px 60px; /* Adjust the gap between rows and columns */
+  justify-items: center;
+  padding: 20px;
+}
+
+/* Icon section */
+.icon-section {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr); /* 6 icons per row on larger screens */
   gap: 40px 60px; /* Adjust the gap between rows and columns */
   justify-items: center;
   padding: 20px;
@@ -273,29 +282,35 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between; /* Ensure space between image and text */
-  width: 150px; /* Adjust the width of the icon container */
+  justify-content: space-between;
+  width: 150px;
   text-align: center;
-  height: 200px; /* Fixed height to ensure all boxes are the same size */
-  margin: 0; /* Remove unnecessary margin */
+  height: 200px;
+  margin: 0 auto;
 }
 
 .circle-icon {
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background-color: #6c63ff; /* Icon background color */
+  background-color: #6c63ff;
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: hidden; /* Ensure the image stays inside the circle */
+  overflow: hidden;
 }
 
 .circle-icon img {
-  width: 100%; /* Make sure the image fits the circle */
+  width: 100%;
   height: 100%;
-  border-radius: 50%; /* Ensure the image fits the circular container */
-  object-fit: cover; /* Ensure the image scales properly without distortion */
+  object-fit: cover;
+}
+
+.icon-box p {
+  margin: 10px 0 0;
+  font-size: 1rem;
+  color: #333;
+  text-align: center;
 }
 
 .icon-box {
@@ -333,30 +348,66 @@ body {
 
 .card-img-top {
   width: 100%;
-  height: auto;
-  border-radius: 12px;
+  height: 400px; /* A fixed height for better control */
+  border-radius: 8px; /* Smaller corner rounding */
   object-fit: cover;
-  margin-bottom: 20px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  margin-bottom: 15px; /* Slightly reduced margin */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Softer shadow */
 }
 
 .card-body {
   padding: 20px;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
+
+
+/* Responsive adjustments for large tablets and smaller laptops */
+@media (max-width: 1500px) {
   .header {
-    font-size: 2rem;
+    font-size: 1.8rem; /* Slightly smaller header */
   }
 
   .form-control {
-    max-width: 300px;
+    max-width: 250px; /* Adjust the form size */
+  }
+
+  .icon-section {
+    grid-template-columns: repeat(3, 1fr); /* 3 icons per row */
+  }
+
+  .circle-icon {
+    width: 90px;
+    height: 90px;
+  }
+
+  .icon-box {
+    width: 120px; /* Smaller icon container */
+    height: 180px; /* Adjust height to keep uniformity */
+  }
+}
+
+/* Responsive adjustments for small tablets */
+@media (max-width: 768px) {
+  .header {
+    font-size: 1.5rem;
+  }
+
+  .form-control {
+    max-width: 220px;
   }
 
   .icon-section {
     grid-template-columns: repeat(2, 1fr); /* 2 icons per row */
   }
+
+  .features-section .row {
+    flex-direction: column;
+    align-items: center;
+}
+
+.feature-card {
+    margin-bottom: 30px;
+}
 
   .circle-icon {
     width: 80px;
@@ -364,31 +415,35 @@ body {
   }
 
   .icon-box {
-    width: 100px; /* Adjust the width of the icon container */
+    width: 100px;
+    height: 160px;
   }
 }
 
+/* Responsive adjustments for mobile screens */
 @media (max-width: 576px) {
   .header {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
   }
 
   .form-control {
-    max-width: 250px;
+    max-width: 200px;
   }
 
   .icon-section {
     grid-template-columns: 1fr; /* 1 icon per row */
+    gap: 20px; /* Reduce the gap for smaller screens */
   }
+
   .circle-icon {
     width: 70px;
     height: 70px;
   }
 
   .icon-box {
-    width: 80px; /* Adjust the width of the icon container */
+    width: 80px;
+    height: 140px; /* Smaller icon container */
   }
-
 }
 
 
@@ -408,42 +463,6 @@ h6.text-muted {
   margin-bottom: 10px;
 }
 
-
-/* Payroll Table Styling */
-table {
-  width: 80%; /* Make the table take up 80% of the available width */
-  margin: 30px auto; /* Center the table with some space above */
-  border-collapse: collapse; /* Remove double borders between cells */
-  font-family: 'Roboto', sans-serif;
-  font-size: 1rem;
-  color: #333;
-}
-
-table th, table td {
-  padding: 12px 15px; /* Add some padding for better spacing */
-  text-align: center; /* Center-align the text */
-  border-bottom: 1px solid #ddd; /* Add a light border between rows */
-}
-
-table th {
-  background-color: #6c63ff; /* Add a purple background to table headers */
-  color: white; /* White text for better contrast */
-  text-transform: uppercase; /* Make the header text uppercase */
-  font-size: 1.1rem; /* Slightly larger font size for headers */
-}
-
-table td {
-  background-color: #f9f9f9; /* Light background for table cells */
-}
-
-table tr:nth-child(even) td {
-  background-color: #f1f1f1; /* Light gray background for alternating rows */
-}
-
-table tr:hover td {
-  background-color: #e2e8f0; /* Light blue-gray background on hover */
-}
-
 /* Table Heading */
 h1 {
   text-align: center;
@@ -454,31 +473,12 @@ h1 {
   font-family: 'Roboto', sans-serif;
 }
 
-/* Footer Styling */
-footer {
-  margin-top: 40px; /* Add spacing above footer */
-  padding: 20px 0;
-  background-color: #eee;
-  text-align: center;
-  color: #666;
-  font-family: 'Roboto', sans-serif;
-}
-
-footer a {
-  color: #6c63ff; /* Link color for theme consistency */
-  text-decoration: none;
-}
-
-footer a:hover {
-  text-decoration: underline; /* Underline on hover */
-}
-
 /* Contact us section */
 .contact-us, .our-offices {
   text-align: center;
   padding: 40px;
   background-color: white;
-  margin: 20px auto;
+  margin: 20px auto
   max-width: 1200px;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -557,83 +557,554 @@ footer a:hover {
   color: #0073e6;
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
-  .support-sections, .office-locations {
-      flex-direction: column;
-      align-items: center;
-  }
 
-  .support-card, .office {
-      width: 90%;
-  }
-
-  .office-tabs {
-      flex-direction: column;
-  }
+/* Footer styling */
+.footer {
+  background-color: #f8f9fa;
+  padding: 40px 20px;
+  color: #6c757d;
+  max-width: 1200px; /* Limit the max width of the footer */
+  margin: 0 auto; /* Center the footer */
 }
 
-
-.tree ul {
-  list-style-type: none;
-  position: relative;
-  padding-left: 20px;
+.footer .container-xxl {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between; /* Evenly distribute content */
+  align-items: flex-start;
+  gap: 20px;
 }
 
-.tree ul ul {
-  margin-left: 20px;
+/* Contact Info */
+.footer .contact-info {
+  flex: 1;
+  max-width: 250px; /* Limit the width to prevent overflow */
 }
 
-.tree li {
+.footer .contact-info p {
   margin: 0;
-  padding: 10px 5px;
-  position: relative;
 }
 
-.tree li::before, .tree li::after {
-  content: '';
-  position: absolute;
-  left: -20px;
-  border-left: 1px solid #ccc;
+.footer .contact-info a {
+  color: #6c63ff;
+  text-decoration: none;
 }
 
-.tree li::before {
-  top: 0;
-  bottom: 50%;
-  height: 50%;
-  width: 1px;
+.footer .contact-info a:hover {
+  text-decoration: underline;
 }
 
-.tree li::after {
-  top: 50%;
-  bottom: 0;
-  height: 50%;
-  width: 1px;
+/* Quick Links */
+.footer .quick-links {
+  flex: 1;
+  max-width: 250px; /* Prevent stretching */
 }
 
-.tree span.department {
+.footer .quick-links a {
+  display: block; /* Stack them vertically */
+  color: #6c63ff;
+  text-decoration: none;
+  margin-bottom: 5px; /* Add some spacing between links */
+}
+
+.footer .quick-links a:hover {
+  text-decoration: underline;
+}
+
+/* Social Links */
+.footer .social-links {
+  flex: 1;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.footer .social-links a {
+  color: #6c63ff;
+  text-decoration: none;
+}
+
+.footer .social-links a:hover {
+  color: #333;
+}
+
+/* Social Media Icons */
+.footer .social-links i {
+  font-size: 1.5rem;
+  margin-right: 5px;
+}
+
+/* Newsletter Form */
+.footer .newsletter {
+  flex: 1;
+  display: flex;
+  flex-direction: column; /* Stack input and button vertically */
+  align-items: flex-start;
+}
+
+.footer .newsletter input[type="email"] {
+  padding: 10px;
+  font-size: 0.875rem;
+  border: 1px solid #ced4da;
+  border-radius: 5px;
+  width: 220px;
+  margin-bottom: 10px; /* Add space between input and button */
+}
+
+.footer .newsletter button {
+  background-color: #6c63ff;
+  color: #fff;
+  padding: 10px 20px;
+  font-size: 0.875rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.footer .newsletter button:hover {
+  background-color: #5a54d6;
+}
+
+/* Legal Section */
+.footer .legal {
+  text-align: right;
+}
+
+.footer .legal a {
+  color: #6c63ff;
+  text-decoration: none;
+}
+
+.footer .legal a:hover {
+  text-decoration: underline;
+}
+
+/* Back to Top Button */
+.back-to-top {
+  color: #6c63ff;
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.back-to-top:hover {
+  color: #333;
+}
+
+.back-to-top i {
+  font-size: 1.2rem;
+  margin-right: 5px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .footer .container-xxl {
+    flex-direction: column;
+    text-align: center;
+    gap: 30px;
+  }
+
+  .footer .contact-info,
+  .footer .quick-links,
+  .footer .social-links,
+  .footer .newsletter,
+  .footer .legal {
+    margin-bottom: 20px;
+  }
+
+  .footer .newsletter input[type="email"] {
+    width: 100%; /* Make email input full width on mobile */
+    margin-bottom: 10px;
+  }
+
+  .footer .newsletter button {
+    width: 100%; /* Make button full width on mobile */
+  }
+
+  .footer .quick-links a {
+    text-align: center;
+    margin-bottom: 10px; /* Increase spacing for mobile */
+  }
+}
+
+.welcome-section {
+  padding: 20px 10px; /* Reduced padding */
+  border-radius: 5px;
+  color: white;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.welcome-section p {
+  font-size: 1rem; /* Reduced font size */
+  line-height: 1.4; /* Slightly reduced line height */
+  max-width: 1015px;
+  margin: 0 auto;
+  color: #000;
+}
+
+.features-section {
+  background-color: #f9f9f9;
+  padding: 50px 20px;
+  border-radius: 10px;
+}
+
+
+.features-section h2, .features-section p {
+  font-size: 1.2rem;
+  line-height: 1.5; /* Adjust line-height for readability */
+}
+
+.features-section h3 {
+  font-size: 1.4rem;
+  margin-top: 20px;
+}
+
+.features-section, .video-section {
+  text-align: center;
+}
+
+.features-section .row {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px; /* Add gap between cards */
+}
+
+.feature-card {
+  text-align: center;
+  padding: 20px;
+}
+
+.feature-card i {
+  font-size: 3rem; /* Increase icon size */
+  color: #6c63ff;
+  margin-bottom: 15px;
+}
+
+.feature-card p {
+  font-size: 1.1rem; /* Slightly increase the text size */
+  margin-top: 10px;
+  line-height: 1.4;
+}
+
+.video-section {
+  margin-top: 40px;
+  padding: 20px;
+}
+
+.video-section video {
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stats-section {
+  margin-bottom: 60px;
+}
+
+.stats-section h3 {
+  font-size: 2.5rem;
+  color: #6c63ff; /* Highlight with the theme color */
+  margin-bottom: 10px;
+}
+
+.stats-section p {
+  font-size: 1.2rem;
+}
+
+.stats-section .stat {
+  margin-bottom: 30px;
+}
+
+
+/* Employee info styling */
+.employee-info {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.employee-info h2 {
+  font-size: 2rem;
   font-weight: bold;
-  color: #2c3e50;
+  color: #6c63ff;
 }
 
-.tree span {
-  background-color: #f4f4f4;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-weight: normal;
+.employee-info p {
+  font-size: 1.2rem;
+  color: #666;
 }
 
-.tree li::before, .tree li::after {
-  border-left: 1px solid #8a8a8a;
+/* Infographic container */
+.infographic-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 cards per row */
+  gap: 20px;
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 10px;
 }
 
-.tree li::before {
-  top: 0;
-  bottom: 50%;
-  height: 50%;
+/* Info card styling */
+.info-card {
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.tree li::after {
-  top: 50%;
-  bottom: 0;
+.info-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.info-card h3 {
+  font-size: 1.2rem;
+  margin-top: 15px;
+  color: #333;
+}
+
+.info-card p {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Icon styling */
+.info-card .icon {
+  font-size: 40px; /* Increase icon size */
+  margin-bottom: 10px;
+}
+
+/* Specific card color themes */
+.department-card { background-color: #cce5ff; }
+.job-status-card { background-color: #d1ffd6; }
+.gender-card { background-color: #ffd1d1; }
+.join-date-card { background-color: #ffe0b5; }
+.employee-status-card { background-color: #d5d5ff; }
+.termination-date-card { background-color: #ffb5b5; }
+
+/* Move Return to Homepage button under the cards */
+.return-button-container {
+  text-align: center;
+  margin-top: 30px; /* Add space between cards and button */
+}
+
+.return-button {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #6c63ff;
+  color: white;
+  border-radius: 5px;
+  text-decoration: none;
+  text-align: center;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+}
+
+.return-button:hover {
+  background-color: #5753d1;
+}
+
+/* Circular avatar styling */
+.avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover; /* Ensures the image fits nicely inside the circle */
+  margin-bottom: 20px;
+}
+
+/* Info card styling for the phone number */
+.phone-card {
+  background-color: #e0f7fa; /* A soft blue background */
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.phone-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.phone-card h3 {
+  font-size: 1.2rem;
+  margin-top: 15px;
+  color: #333;
+}
+
+.phone-card p {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+
+/* Responsive design for mobile screens */
+@media (max-width: 768px) {
+  .infographic-container {
+    grid-template-columns: 1fr; /* Stack cards vertically on mobile */
+  }
+
+  .info-card {
+    padding: 15px;
+  }
+
+  .info-card h3 {
+    font-size: 1.1rem;
+  }
+}
+
+.card-header {
+  background-color: #6c63ff;
+  color: #fff;
+  padding: 10px;
+  border-radius: 8px 8px 0 0;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+/* Payroll Card Container */
+.payroll-card-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+/* Individual Payroll Card */
+.payroll-card {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.payroll-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.payroll-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.payroll-item i {
+  font-size: 1.2rem;
+  margin-right: 10px;
+  color: #6c63ff;
+}
+
+.payroll-item p {
+  margin: 0;
+  font-size: 1rem;
+  color: #333;
+}
+
+/* Hover effect */
+.payroll-card:hover {
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.attendance-card-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+/* Individual Attendance Card */
+.attendance-card {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.attendance-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-date h4 {
+  font-size: 1.2rem;
+  color: #6c63ff;
+}
+
+.card-status span {
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.status-present {
+  color: green;
+}
+
+.status-absent {
+  color: red;
+}
+
+
+.team-directory-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+/* Department Card */
+.department-card {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.department-name {
+  font-size: 1.5rem;
+  color: #6c63ff;
+  margin-bottom: 10px;
+}
+
+/* Team List */
+.team-list {
+  list-style: none;
+  padding: 0;
+}
+
+.team-member {
+  padding: 10px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.team-member:last-child {
+  border-bottom: none;
+}
+
+/* Member Info */
+.member-info {
+  display: flex;
+  align-items: center;
+}
+
+.member-info i {
+  margin-right: 10px;
+  color: #6c63ff;
+}
+
+.member-info strong {
+  margin-right: 5px;
+  font-weight: 600;
+}
+
+.member-info a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.member-info a:hover {
+  text-decoration: underline;
 }

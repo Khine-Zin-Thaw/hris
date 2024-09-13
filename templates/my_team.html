@@ -1,31 +1,34 @@
 {% extends "userbase.html" %}
 
 {% block content %}
-<h1>Team Directory (Hierarchical View)</h1>
-<div class="tree">
-    <ul>
-        {% for department, employees in departments.items() %}
-        <li>
-            <span class="department">{{ department }}</span>
-            <ul>
-                {% for employee in employees %}
-                <li>
-                    <span>
-                        {{ employee['name'] }}
-                        ({{ employee['role'] }}) - {{ employee['email'] }}
-                    </span>
-                    {% if employee['is_leader'] %}
-                    <ul>
-                        {% for member in employee['team_members'] %}
-                        <li>{{ member['name'] }} - {{ member['email'] }}</li>
-                        {% endfor %}
-                    </ul>
-                    {% endif %}
-                </li>
-                {% endfor %}
-            </ul>
-        </li>
-        {% endfor %}
-    </ul>
-</div>
+    <div class="container mt-4">
+        <h1 class="text-center mb-4">Team Directory (Hierarchical View)</h1>
+
+        <div class="team-directory-container">
+            {% for department, members in departments.items() %}
+            <div class="department-card">
+                <h3 class="department-name">{{ department }}</h3>
+                <ul class="team-list">
+                    {% for member in members %}
+                    <li class="team-member">
+                        <div class="member-info">
+                            <i class="{{ 'fa fa-user-tie' if member.is_leader else 'fa fa-user' }}"></i> 
+                            <strong>{{ member.emp_name }}</strong> 
+                            {% if member.is_leader %}
+                            ({{ 'Team Leader' if member.is_team_leader else 'Dept Leader' }})
+                            {% endif %}
+                            - <a href="mailto:{{ member.email }}">{{ member.email }}</a>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Return to Homepage Button -->
+        <div class="return-button-container text-center mt-4">
+            <a href="{{ url_for('check_in') }}" class="return-button">Return to Homepage</a>
+        </div>
+    </div>
 {% endblock %}

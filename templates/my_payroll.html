@@ -1,39 +1,53 @@
 {% extends "userbase.html" %}
 
 {% block content %}
-    <!-- Page Content -->
     <div class="container mt-4">
-        <h1>My Payroll for {{ current_year }}</h1>
-        <a class="btn btn-secondary mb-3" href="{{ url_for('check_in') }}">Return to Main Page</a>
+        <h1 class="text-center mb-4">My Payroll for {{ current_year }}</h1>
+        
+        <!-- Loop through each month's payroll and display it in a card format -->
+        <div class="payroll-card-container">
+            {% for record in payroll_data %}
+            <div class="payroll-card">
+                <div class="card-header">
+                    <h3>{{ record.month }}</h3> <!-- Month Title -->
+                </div>
+                <div class="card-body">
+                    <div class="payroll-item">
+                        <i class="fa fa-money-bill-wave icon"></i> <!-- Salary Icon -->
+                        <p><strong>Basic Salary:</strong> {{ record.basic_salary | float | round(2) }}</p>
+                    </div>
+                    <div class="payroll-item">
+                        <i class="fa fa-percentage icon"></i> <!-- Tax Icon -->
+                        <p><strong>Tax:</strong> {{ record.tax | float | round(2) }}</p>
+                    </div>
+                    <div class="payroll-item">
+                        <i class="fa fa-shield-alt icon"></i> <!-- SSB Icon -->
+                        <p><strong>SSB:</strong> {{ record.ssb | float | round(2) }}</p>
+                    </div>
+                    <div class="payroll-item">
+                        <i class="fa fa-wallet icon"></i> <!-- Monthly Payout Icon -->
+                        <p><strong>Monthly Payout:</strong> {{ record.monthly_payout | float | round(2) }}</p>
+                    </div>
+                    <div class="payroll-item">
+                        <i class="fa fa-coins icon"></i> <!-- Net Salary Icon -->
+                        <p><strong>Net Salary:</strong> {{ record.net_salary | float | round(2) }}</p>
+                    </div>
+                    <div class="payroll-item">
+                        <i class="fa fa-check icon"></i> <!-- Present Days Icon -->
+                        <p><strong>Total Present:</strong> {{ record.total_present }}</p>
+                    </div>
+                    <div class="payroll-item">
+                        <i class="fa fa-times icon"></i> <!-- Leave Days Icon -->
+                        <p><strong>Total Leave:</strong> {{ record.total_leave }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
 
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Month</th>
-                    <th>Basic Salary</th>
-                    <th>Tax</th>
-                    <th>SSB</th>
-                    <th>Monthly Payout</th>
-                    <th>Net Salary</th>
-                    <th>Total Present</th>
-                    <th>Total Leave</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for record in payroll_data %}
-                <tr>
-                    <td>{{ record.month }}</td>
-                    <td>{{ record.basic_salary | float | round(2) }}</td>
-                    <td>{{ record.tax | float | round(2) }}</td>
-                    <td>{{ record.ssb | float | round(2) }}</td>
-                    <td>{{ record.monthly_payout | float | round(2) }}</td>
-                    <td>{{ record.net_salary | float | round(2) }}</td>
-                    <td>{{ record.total_present }}</td>
-                    <td>{{ record.total_leave }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <!-- Return to Homepage Button -->
+        <div class="return-button-container text-center mt-4">
+            <a href="{{ url_for('check_in') }}" class="return-button">Return to Homepage</a>
+        </div>
     </div>
-
-    {% endblock %}
+{% endblock %}

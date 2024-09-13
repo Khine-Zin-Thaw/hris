@@ -35,7 +35,6 @@
             </div>
         </div>
                 
-                                            
         <!-- Card Section -->
         <div class="card mt-3 text-center">
             <!-- Flash Messages Section -->
@@ -52,7 +51,7 @@
                 {% endwith %}
                 
                 <!-- Image -->
-                <img class="card-img-top" src="{{ url_for('static', filename='assets/img/elements/7.jpg') }}" alt="Attendance Status Image">
+                <img class="card-img-top" src="{{ url_for('static', filename='assets/img/elements/checkin1.webp') }}" alt="Attendance Status Image">
 
 <!-- Updated form structure to center elements -->
 <form method="POST" class="mt-4 form-group">
@@ -63,62 +62,87 @@
     </select>
     <button type="submit" class="submit-btn">Submit</button>
   </form>
-              </div>
-        </div>
 
         <!-- Icon Section -->
         <div class="icon-section mt-4">
             <div class="icon-box">
                 <a href="{{ url_for('myinfo') }}">
                     <div class="circle-icon">
-                        <img src="{{ url_for('static', filename='assets/img/elements/7.jpg') }}" alt="Profile Icon">
+                        <img src="{{ url_for('static', filename='assets/img/elements/profile.png') }}" alt="Profile Icon">
                     </div>
-                    <p>My Profile Information</p>
+                    <p>Profile</p>
                 </a>
             </div>
             <div class="icon-box">
                 <a href="{{ url_for('my_payroll') }}">
                     <div class="circle-icon">
-                        <img src="{{ url_for('static', filename='assets/img/elements/7.jpg') }}" alt="Payroll Icon">
+                        <img src="{{ url_for('static', filename='assets/img/elements/payroll.webp') }}" alt="Payroll Icon">
                     </div>
-                    <p>My Payroll Record</p>
+                    <p>Payroll</p>
                 </a>
             </div>
             <div class="icon-box">
                 <a href="{{ url_for('my_attendance') }}">
                     <div class="circle-icon">
-                        <img src="{{ url_for('static', filename='assets/img/elements/7.jpg') }}" alt="Attendance Icon">
+                        <img src="{{ url_for('static', filename='assets/img/elements/attendance.webp') }}" alt="Attendance Icon">
                     </div>
-                    <p>My Attendance Record</p>
+                    <p>Attendance</p>
                 </a>
             </div>
             <div class="icon-box">
                 <a href="{{ url_for('my_team') }}">
                     <div class="circle-icon">
-                        <img src="{{ url_for('static', filename='assets/img/elements/7.jpg') }}" alt="Team Icon">
+                        <img src="{{ url_for('static', filename='assets/img/elements/teammember.webp') }}" alt="Team Icon">
                     </div>
-                    <p>My Team Members</p>
+                    <p>Members</p>
                 </a>
             </div>
             <div class="icon-box">
                 <a href="{{ url_for('contact_us') }}">
                     <div class="circle-icon">
-                        <img src="{{ url_for('static', filename='assets/img/elements/7.jpg') }}" alt="HR Icon">
+                        <img src="{{ url_for('static', filename='assets/img/elements/contactus.webp') }}" alt="HR Icon">
                     </div>
-                    <p>Contact HR Team</p>
+                    <p>Contact Us</p>
                 </a>
             </div>
             <div class="icon-box">
                 <a href="{{ url_for('about_us') }}">
                     <div class="circle-icon">
-                        <img src="{{ url_for('static', filename='assets/img/elements/7.jpg') }}" alt="IT Icon">
+                        <img src="{{ url_for('static', filename='assets/img/elements/aboutus.webp') }}" alt="About Us Icon">
                     </div>
                     <p>About Us</p>
                 </a>
             </div>
         </div>
                         </div>
-    </div>
+    <section class="features-section text-center mt-5">
+        <h2>Our Key Features</h2>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <i class="fa fa-calendar-check-o fa-2x"></i>
+                    <h3>Attendance Check-in</h3>
+                    <p>Manage and track attendance records efficiently.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <i class="fa fa-money fa-2x"></i>
+                    <h3>Payroll Management</h3>
+                    <p>Keep up-to-date payroll records and salary details.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <i class="fa fa-users fa-2x"></i>
+                    <h3>Team Overview</h3>
+                    <p>Monitor your team members and access their details in one place.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
 </div>
 
 {% endblock %}

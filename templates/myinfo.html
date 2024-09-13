@@ -1,41 +1,77 @@
 {% extends "userbase.html" %}
 
 {% block content %}
+<section class="text-center mt-5">
 
+<h1> My Profile </h1>
+</section>
 
 <div class="container mt-4">
-    <h1>My Information</h1>
 
-    <a class="btn btn-secondary mb-3" href="{{ url_for('check_in') }}">Return to Main Page</a>
+    <!-- Employee Photo, Name, and ID Section -->
+    <div class="employee-info text-center">
+        <!-- Display the employee photo as a circular avatar -->
+        {% if employee.photo %}
+        <img src="{{ url_for('static', filename='uploads/' ~ employee.photo) }}" alt="Employee Photo" class="avatar"> <!-- Use the photo from the database -->
+        {% else %}
+        <img src="{{ url_for('static', filename='assets/img/favicon/favicon.webp') }}" alt="Employee Photo" class="avatar"> <!-- Default avatar if no photo -->
+        {% endif %}
+        
+        <h2>NAME: {{ employee.emp_name }}</h2>
+        <p>Employee ID: {{ employee.emp_id }}</p>
+    </div>
 
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Employee ID</th>
-                <th>Name</th>
-                <th>Department</th>
-                <th>Job Status</th>
-                <th>Gender</th>
-                <th>Join Date</th>
-                <th>Employee Status</th>
-                <th>Termination Date</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for employee in employees %}
-            <tr>
-                <td>{{ employee.emp_id }}</td>
-                <td>{{ employee.emp_name }}</td>
-                <td>{{ employee.department_name }}</td>
-                <td>{{ employee.job_status }}</td>
-                <td>{{ employee.gender }}</td>
-                <td>{{ employee.join_date }}</td>
-                <td>{{ employee.employee_status }}</td>
-                <td>{{ employee.termination_date }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <!-- Cards for Employee Details -->
+    <div class="infographic-container">
+        <div class="info-card department-card">
+            <div class="icon"><i class="fa fa-building"></i></div>
+            <h3>{{ employee.department_name }}</h3>
+            <p>Department</p>
+        </div>
+
+        <div class="info-card job-status-card">
+            <div class="icon"><i class="fa fa-briefcase"></i></div>
+            <h3>{{ employee.job_status }}</h3>
+            <p>Job Status</p>
+        </div>
+
+        <div class="info-card gender-card">
+            <div class="icon"><i class="fa fa-venus-mars"></i></div>
+            <h3>{{ employee.gender }}</h3>
+            <p>Gender</p>
+        </div>
+
+        <div class="info-card join-date-card">
+            <div class="icon"><i class="fa fa-calendar"></i></div>
+            <h3>{{ employee.join_date }}</h3>
+            <p>Join Date</p>
+        </div>
+
+        <div class="info-card employee-status-card">
+            <div class="icon"><i class="fa fa-user-check"></i></div>
+            <h3>{{ employee.employee_status }}</h3>
+            <p>Employee Status</p>
+        </div>
+
+        <div class="info-card termination-date-card">
+            <div class="icon"><i class="fa fa-times-circle"></i></div>
+            <h3>{{ employee.termination_date or 'None' }}</h3>
+            <p>Termination Date</p>
+        </div>
+
+        <div></div> 
+        <div class="info-card phone-card">
+            <div class="icon"><i class="fa fa-phone"></i></div>
+            <h3>{{ employee.phone_number }}</h3>
+            <p>Phone Number</p>
+        </div>
+        <div></div> 
+    </div>
+    </div>
+
+    <!-- Return to Homepage Button -->
+    <div class="return-button-container">
+        <a href="{{ url_for('check_in') }}" class="return-button">Return to Homepage</a>
+    </div>
 </div>
-
-    {% endblock %}
+{% endblock %}
