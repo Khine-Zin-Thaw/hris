@@ -12,6 +12,10 @@ body {
   font-family: 'Roboto', sans-serif;
   background-color: #f5f5f5;
   color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
 }
 
 .container {
@@ -21,19 +25,15 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-image: url('path_to_your_background_image.jpg'); /* Replace with your actual image path */
-  background-size: cover;
-  background-position: center;
 }
 
-/* Header styling */
 .header {
-  font-size: 2.5rem; /* Increase the font size */
-  font-weight: bold;  /* Make the text bold */
+  font-size: 2.5rem; 
+  font-weight: bold; 
   text-align: center;
-  color: #6c63ff; /* Match the theme color */
+  color: #6c63ff; 
   margin-bottom: 20px;
-  letter-spacing: 1px; /* Add slight spacing for better aesthetics */
+  letter-spacing: 1px; 
 }
 
 /* Carousel styling */
@@ -46,7 +46,7 @@ body {
 }
 
 .slider {
-  height: 400px; /* Adjust the height of the slider */
+  height: 400px; 
   position: relative;
   overflow: hidden;
   display: flex;
@@ -96,15 +96,15 @@ body {
 
 
 .slider__contents {
-  width: 100%; /* Each slide takes up full width */
-  flex-shrink: 0; /* Prevent slides from shrinking */
+  width: 100%; 
+  flex-shrink: 0; 
   position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
   color: white;
   text-align: center;
-  flex: 0 0 100%; /* Each slide takes full width */
+  flex: 0 0 100%; 
   z-index: 1;
 }
 
@@ -123,10 +123,9 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
-  z-index: 1; /* Behind text but above the image */
+  background-color: rgba(0, 0, 0, 0.5); 
+  z-index: 1; 
 }
-
 
 .slider__image {
   width: 100%;
@@ -340,7 +339,7 @@ body {
 
 /* Card styling */
 .card {
-  border-radius: 8px;
+  border-radius: 15px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   margin-top: 20px;
   background-color: rgba(255, 255, 255, 0.8); /* Transparent white */
@@ -418,6 +417,22 @@ body {
     width: 100px;
     height: 160px;
   }
+  .team-cards {
+    grid-template-columns: 1fr; /* Stack cards on smaller screens */
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1200px) {
+  .team-cards {
+    grid-template-columns: repeat(2, 1fr); /* Show 2 cards per row on medium screens */
+  }
+}
+
+@media (min-width: 1201px) {
+  .team-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
 }
 
 /* Responsive adjustments for mobile screens */
@@ -567,7 +582,7 @@ h1 {
   margin: 0 auto; /* Center the footer */
 }
 
-.footer .container-xxl {
+.footer {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between; /* Evenly distribute content */
@@ -697,7 +712,7 @@ h1 {
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
-  .footer .container-xxl {
+  .footer {
     flex-direction: column;
     text-align: center;
     gap: 30px;
@@ -724,6 +739,15 @@ h1 {
     text-align: center;
     margin-bottom: 10px; /* Increase spacing for mobile */
   }
+}
+
+.container-xxl {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 50px;
+  max-width: 1200px; 
+  margin: 0 auto;
 }
 
 .welcome-section {
@@ -835,7 +859,7 @@ h1 {
 /* Infographic container */
 .infographic-container {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 3 cards per row */
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
   padding: 20px;
   background-color: #f5f5f5;
@@ -870,11 +894,10 @@ h1 {
 
 /* Icon styling */
 .info-card .icon {
-  font-size: 40px; /* Increase icon size */
+  font-size: 40px; 
   margin-bottom: 10px;
 }
 
-/* Specific card color themes */
 .department-card { background-color: #cce5ff; }
 .job-status-card { background-color: #d1ffd6; }
 .gender-card { background-color: #ffd1d1; }
@@ -882,10 +905,9 @@ h1 {
 .employee-status-card { background-color: #d5d5ff; }
 .termination-date-card { background-color: #ffb5b5; }
 
-/* Move Return to Homepage button under the cards */
 .return-button-container {
   text-align: center;
-  margin-top: 30px; /* Add space between cards and button */
+  margin-top: 30px; 
 }
 
 .return-button {
@@ -904,18 +926,17 @@ h1 {
   background-color: #5753d1;
 }
 
-/* Circular avatar styling */
 .avatar {
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  object-fit: cover; /* Ensures the image fits nicely inside the circle */
+  object-fit: cover; 
   margin-bottom: 20px;
 }
 
-/* Info card styling for the phone number */
+
 .phone-card {
-  background-color: #e0f7fa; /* A soft blue background */
+  background-color: #e0f7fa; 
   border-radius: 10px;
   padding: 20px;
   text-align: center;
@@ -940,10 +961,9 @@ h1 {
 }
 
 
-/* Responsive design for mobile screens */
 @media (max-width: 768px) {
   .infographic-container {
-    grid-template-columns: 1fr; /* Stack cards vertically on mobile */
+    grid-template-columns: 1fr; 
   }
 
   .info-card {
@@ -1107,4 +1127,120 @@ h1 {
 
 .member-info a:hover {
   text-decoration: underline;
+}
+
+.section-title {
+  font-size: 2.5rem;
+  color: #4a4a8c;
+  font-weight: bold;
+  margin-bottom: 30px;
+  text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.team-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  align-items: start;
+  margin-bottom: 20px;
+}
+
+.profile-photo {
+  border: 2px solid #ddd;
+  padding: 5px;
+  object-fit: cover;
+  width: 100px;
+  height: 100px;
+}
+
+/* Card Styling */
+.card {
+  border-radius: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.card-title {
+  font-size: 1.2rem;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.img-fluid {
+  border-radius: 50%;
+}
+
+/* Form Container */
+.form-wrapper {
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  text-align: center;
+  width: 100%; 
+  margin-top: 20px;
+}
+
+.custom-form-group {
+  margin-bottom: 15px;
+}
+
+.custom-form-control {
+  width: 100%;
+  padding: 8px;
+  font-size: 0.9rem;
+  border: 1px solid #dcdcdc;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.custom-btn-primary {
+  background-color: #3498db;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.3s;
+}
+
+.custom-btn-primary:hover {
+  background-color: #2980b9;
+}
+
+@media (min-width: 1200px) {
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; 
+  }
+
+  .team-cards {
+    grid-template-columns: repeat(2, 1fr); 
+  }
+
+  .form-wrapper {
+    flex: 1;
+    margin-left: 40px;
+  }
+}
+
+@media (max-width: 1199px) {
+  .row {
+    flex-direction: column;
+  }
+
+  .team-cards {
+    grid-template-columns: 1fr; 
+  }
+
+  .form-wrapper {
+    width: 100%;
+  }
 }

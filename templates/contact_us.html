@@ -2,67 +2,74 @@
 
 {% block content %}
 <div class="container-xxl flex-grow-1 container-p-y">
-    <!-- Teams and Leaders Section -->
-    <div class="row text-center">
-        <h2>Our Teams and Leaders</h2>
-        <div class="col-md-12 mb-4">
-            <div class="row">
+    <div class="row">
+        <!-- Teams and Leaders Section -->
+        <div class="col-lg-7">
+            <h2 class="text-center mb-4">Our Teams and Leaders</h2>
+            <div class="team-cards">
                 {% for team in teams %}
-                <div class="col-md-4 mb-3">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ team.team_name }} - {{ team.leader_name }}</h5>
-                            <div class="text-center mb-3">
-                                {% if team.leader_photo %}
-                                <img src="{{ url_for('static', filename='uploads/' ~ team.leader_photo) }}" alt="Profile Photo" class="img-fluid rounded-circle" width="100" height="100">
-                                {% else %}
-                                <img src="{{ url_for('static', filename='assets/img/default-profile.png') }}" alt="Profile Photo" class="img-fluid rounded-circle" width="100" height="100">
-                                {% endif %}
-                            </div>
-                            <p>Email: {{ team.email }}</p>
-                            <p>Phone: {{ team.phone }}</p>
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ team.team_name }} - {{ team.leader_name }}</h5>
+                        <div class="text-center mb-3">
+                            {% if team.leader_photo %}
+                            <img src="{{ url_for('static', filename='uploads/' ~ team.leader_photo) }}" alt="Profile Photo"
+                                class="img-fluid rounded-circle profile-photo">
+                            {% else %}
+                            <img src="{{ url_for('static', filename='assets/img/favicon/favicon.webp') }}" alt="Profile Photo"
+                                class="img-fluid rounded-circle profile-photo">
+                            {% endif %}
                         </div>
+                        <p>Email: {{ team.email }}</p>
+                        <p>Phone: {{ team.phone_number }}</p>
                     </div>
                 </div>
                 {% endfor %}
             </div>
         </div>
-    </div>
 
-    <!-- Feedback Form Section -->
-    <div class="row mt-5">
-        <div class="col-md-8 mx-auto">
-            <h2 class="text-center">Submit Your Problem to HR</h2>
-            <form method="POST" action="{{ url_for('submit_feedback') }}">
-                <!-- Staff Name -->
-                <div class="form-group mb-3">
-                    <label for="staff_name" class="form-label">Your Name</label>
-                    <input type="text" class="form-control" id="staff_name" name="staff_name" required>
-                </div>
-    
-                <!-- Problem Description -->
-                <div class="form-group mb-3">
-                    <label for="problem_description" class="form-label">Describe Your Problem</label>
-                    <textarea class="form-control" id="problem_description" name="problem_description" rows="4" required></textarea>
-                </div>
-    
-                <!-- Team Selection -->
-                <div class="form-group mb-3">
-                    <label for="team_id" class="form-label">Select Team</label>
-                    <select class="form-control" id="team_id" name="team_id" required>
-                        <option value="" disabled selected>Select Team</option> <!-- Placeholder option -->
-                        {% for team in teams %}
-                        <option value="{{ team.team_id }}">{{ team.team_name }} - Led by {{ team.leader_name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-    
-                <!-- Submit Button -->
-                <div class="text-center">
-                    <button type="submit" class="btn btn-primary">Submit Feedback</button>
-                </div>
-            </form>
+        <!-- Feedback Form Section -->
+        <div class="col-lg-5">
+            <div class="form-wrapper">
+                <h2>Submit Your Problem to HR</h2>
+                <p>Fill out the form below, and we'll get back to you as soon as possible.</p>
+                <form method="POST" action="{{ url_for('submit_feedback') }}">
+                    <!-- Staff Name -->
+                    <div class="custom-form-group">
+                        <label for="staff_name">Your Name</label>
+                        <input type="text" class="custom-form-control" id="staff_name" name="staff_name" required>
+                    </div>
+
+                    <!-- Problem Description -->
+                    <div class="custom-form-group">
+                        <label for="problem_description">Describe Your Problem</label>
+                        <textarea class="custom-form-control" id="problem_description" name="problem_description" rows="4"
+                            required></textarea>
+                    </div>
+
+                    <!-- Team Selection -->
+                    <div class="custom-form-group">
+                        <label for="team_id">Select Team</label>
+                        <select class="custom-form-control" id="team_id" name="team_id" required>
+                            <option value="" disabled selected>Select Team</option>
+                            {% for team in teams %}
+                            <option value="{{ team.team_id }}">{{ team.team_name }} - Led by {{ team.leader_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="text-center">
+                        <button type="submit" class="custom-btn-primary">Submit Feedback</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-    </div>
+</div>
+
+<div class="return-button-container text-center mt-4">
+    <a href="{{ url_for('check_in') }}" class="return-button btn btn-primary">Return to Homepage</a>
+</div>
+
 {% endblock %}
