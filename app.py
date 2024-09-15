@@ -1757,34 +1757,6 @@ def my_attendance():
                            positions=positions, 
                            attendance_records=attendance_records)
 
-@app.route('/my_team')
-def my_team():
-    conn = get_db()
-    cursor = conn.cursor()
-
-    # Fetch employees with their teams, departments, and leader flags
-    query = '''
-    SELECT employee.emp_name, employee.email, employee.phone_number, department.name, employee.is_team_leader, employee.is_dept_leader
-    FROM employee
-    JOIN department ON employee.dept_id = department.dept_id
-    '''
-    cursor.execute(query)
-    results = cursor.fetchall()
-
-    departments = {}
-    for emp_name, email, phone, dept_name, is_team_leader, is_dept_leader in results:
-        if dept_name not in departments:
-            departments[dept_name] = []
-        departments[dept_name].append({
-            'name': emp_name,
-            'email': email,
-            'is_leader': is_team_leader or is_dept_leader,
-            'role': "Team Leader" if is_team_leader else "Dept Leader" if is_dept_leader else "Member",
-            'team_members': []  # You can extend this logic to add members under leaders
-        })
-
-    conn.close()
-    return render_template('my_team.html', departments=departments)
 
 @app.route('/add_announcement', methods=['GET', 'POST'])
 def add_announcement():

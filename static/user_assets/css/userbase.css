@@ -1244,3 +1244,45 @@ h1 {
     width: 100%;
   }
 }
+
+.about-us-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 50px 20px;
+}
+
+.about-title {
+  font-size: 2.5rem;
+  color: #4a4a8c;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+.mission p, .vision p {
+  font-size: 1.1rem;
+  color: #333;
+  line-height: 1.6;
+  text-align: justify;
+}
+
+.vision-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.vision-list li {
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  color: #666;
+}
+
+.vision-list li i {
+  color: #6c63ff;
+  margin-right: 10px;
+}
+
+.about-img {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+

@@ -2,24 +2,29 @@
 
 {% block content %}
     <div class="about-us-container">
-        <h1>About Us</h1>
-        
-        <section class="mission">
-            <h2>Our Mission</h2>
+        <h1 class="text-center about-title">About Us</h1>
+        <section class="mission" style="padding: 40px; background-color: #f9f9f9;">
+            <h2 class="section-title">Our Mission</h2>
             <p>
                 Our mission is to provide our customers with exceptional products and services that enhance their lives. We aim to build trust and satisfaction by consistently delivering high-quality offerings and ensuring transparency, reliability, and a positive customer experience.
             </p>
         </section>
-        
-        <section class="vision">
-            <h2>Our Vision</h2>
-            <ul>
-                <li>To become the leading provider in our industry with innovative solutions that meet the needs of our customers.</li>
-                <li>To expand our global reach and build a brand recognized for excellence and trustworthiness.</li>
-                <li>To foster a culture of creativity, diversity, and sustainability in everything we do.</li>
-                <li>To prioritize customer satisfaction and always act in the best interests of our clients.</li>
-                <li>To continuously improve and adapt to new challenges, ensuring long-term growth and success.</li>
+
+        <section class="vision" style="padding: 40px;">
+            <h2 class="section-title">Our Vision</h2>
+            <ul class="vision-list">
+                <li><i class="fa fa-check-circle"></i> To become the leading provider in our industry with innovative solutions that meet the needs of our customers.</li>
+                <li><i class="fa fa-check-circle"></i> To expand our global reach and build a brand recognized for excellence and trustworthiness.</li>
+                <li><i class="fa fa-check-circle"></i> To foster a culture of creativity, diversity, and sustainability in everything we do.</li>
+                <li><i class="fa fa-check-circle"></i> To prioritize customer satisfaction and always act in the best interests of our clients.</li>
+                <li><i class="fa fa-check-circle"></i> To continuously improve and adapt to new challenges, ensuring long-term growth and success.</li>
             </ul>
         </section>
+
     </div>
+    <div class="return-button-container text-center mt-4">
+        <a href="{{ url_for('check_in') }}" class="return-button btn btn-primary">Return to Homepage</a>
+    </div>
+    
+    
 {% endblock %}

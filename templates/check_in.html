@@ -90,14 +90,6 @@
                 </a>
             </div>
             <div class="icon-box">
-                <a href="{{ url_for('my_team') }}">
-                    <div class="circle-icon">
-                        <img src="{{ url_for('static', filename='assets/img/elements/teammember.webp') }}" alt="Team Icon">
-                    </div>
-                    <p>Members</p>
-                </a>
-            </div>
-            <div class="icon-box">
                 <a href="{{ url_for('contact_us') }}">
                     <div class="circle-icon">
                         <img src="{{ url_for('static', filename='assets/img/elements/contactus.webp') }}" alt="HR Icon">
@@ -111,6 +103,14 @@
                         <img src="{{ url_for('static', filename='assets/img/elements/aboutus.webp') }}" alt="About Us Icon">
                     </div>
                     <p>About Us</p>
+                </a>
+            </div>
+            <div class="icon-box">
+                <a href="{{ url_for('logout') }}">
+                    <div class="circle-icon">
+                        <img src="{{ url_for('static', filename='assets/img/elements/logout.webp') }}" alt="logout Icon">
+                    </div>
+                    <p>Log out</p>
                 </a>
             </div>
         </div>
