@@ -31,6 +31,7 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
+
 @app.route('/')
 @app.route('/index')
 def index():
@@ -168,6 +169,9 @@ def create_user():
 
 @app.route('/add_department', methods=['GET', 'POST'])
 def add_department():
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -228,6 +232,9 @@ def add_department():
 
 @app.route('/edit_department/<int:dept_id>', methods=['GET', 'POST'])
 def edit_department(dept_id):
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -280,6 +287,9 @@ def edit_department(dept_id):
 
 @app.route('/delete_department/<int:dept_id>', methods=['POST'])
 def delete_department(dept_id):
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -386,6 +396,9 @@ def add_position():
 
 @app.route('/edit_position/<int:pos_id>', methods=['GET', 'POST'])
 def edit_position(pos_id):
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -429,6 +442,9 @@ def edit_position(pos_id):
 
 @app.route('/delete_position/<int:pos_id>', methods=['POST'])
 def delete_position(pos_id):
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     pos_id = request.form.get('pos_id')  # Extract the pos_id from the form data
     conn = get_db()
     cursor = conn.cursor()
@@ -468,6 +484,9 @@ def delete_position(pos_id):
     
 @app.route('/edit_user/<int:user_id>/<string:role>', methods=['GET', 'POST'])
 def edit_user(user_id, role):
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -497,6 +516,9 @@ def edit_user(user_id, role):
 
 @app.route('/delete_user/<int:user_id>/<string:role>', methods=['POST'])
 def delete_user(user_id, role):
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -509,6 +531,9 @@ def delete_user(user_id, role):
 
 @app.route('/check_employee_accounts')
 def check_employee_accounts():
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -577,6 +602,9 @@ def check_employee_accounts():
 
 @app.route('/add_users', methods=['POST'])
 def add_users():
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     selected_employees = request.form.getlist('emp_ids')  # List of selected employee IDs
     password = request.form.get('password')
     role = request.form.get('role')
@@ -778,6 +806,9 @@ def add_employee():
 
 @app.route('/edit_employee/<int:emp_id>', methods=['GET', 'POST'])
 def edit_employee(emp_id):
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -791,7 +822,7 @@ def edit_employee(emp_id):
     employee = cursor.fetchone()
 
     # Fetch positions for the dropdown
-    cursor.execute('SELECT pos_id, position_name FROM position')
+    cursor.execute('SELECT pos_id, position_name, basic_salary FROM position')
     positions = cursor.fetchall()
 
     if request.method == 'POST':
@@ -818,16 +849,27 @@ def edit_employee(emp_id):
         else:
             photo_filename = employee[10]  # Keep old photo if no new one is uploaded
 
+        # Fetch the new position's basic salary
+        cursor.execute('SELECT basic_salary FROM position WHERE pos_id = ?', (position_id,))
+        basic_salary = cursor.fetchone()[0]
+
         try:
-            # Update the employee data
+            # Update the employee data along with the new salary if the position changes
             cursor.execute('''
                 UPDATE employee 
                 SET emp_name = ?, email = ?, phone_number = ?, pos_id = ?, job_status = ?, gender = ?, join_date = ?, employee_status = ?, termination_date = ?, photo = ?
                 WHERE emp_id = ?
             ''', (emp_name, email, phone, position_id, job_status, gender, join_date, employee_status, termination_date, photo_filename, emp_id))
 
+            # Update the basic salary in the payroll table
+            cursor.execute('''
+                UPDATE payroll 
+                SET basic_salary = ?
+                WHERE emp_id = ?
+            ''', (basic_salary, emp_id))
+
             conn.commit()
-            flash('Employee updated successfully!', 'success')
+            flash('Employee updated successfully, including new salary based on position!', 'success')
         except sqlite3.Error as e:
             conn.rollback()
             flash(f'An error occurred: {e}', 'danger')
@@ -840,6 +882,9 @@ def edit_employee(emp_id):
 
 @app.route('/delete_employee/<int:emp_id>', methods=['POST'])
 def delete_employee(emp_id):
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -1200,6 +1245,9 @@ def payroll_settings():
 
 @app.route('/edit_payroll/<emp_id>', methods=['GET', 'POST'])
 def edit_payroll(emp_id):
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     db = get_db()
     if request.method == 'POST':
         # Fetch form data
@@ -1398,6 +1446,9 @@ def payroll():
 
 @app.route('/teams', methods=['GET', 'POST'])
 def teams():
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -1475,6 +1526,9 @@ def teams():
 
 @app.route('/delete_team/<int:team_id>', methods=['POST'])
 def delete_team(team_id):
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -1493,6 +1547,9 @@ def delete_team(team_id):
 
 @app.route('/add_employee_to_team/<int:team_id>', methods=['GET', 'POST'])
 def add_employee_to_team(team_id):
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -1560,6 +1617,9 @@ def add_employee_to_team(team_id):
 
 @app.route('/view_team/<int:team_id>')
 def view_team(team_id):
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -1598,6 +1658,9 @@ def view_team(team_id):
 
 @app.route('/edit_team/<int:team_id>', methods=['GET', 'POST'])
 def edit_team(team_id):
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -1670,6 +1733,9 @@ def edit_team(team_id):
 
 @app.route('/contact_us')
 def contact_us():
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -1688,6 +1754,9 @@ def contact_us():
 
 @app.route('/submit_feedback', methods=['POST'])
 def submit_feedback():
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     # Capture form data
     staff_name = request.form.get('staff_name')
     problem_description = request.form.get('problem_description')
@@ -1760,6 +1829,9 @@ def my_attendance():
 
 @app.route('/add_announcement', methods=['GET', 'POST'])
 def add_announcement():
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -1830,6 +1902,9 @@ def add_announcement():
 
 @app.route('/edit_announcement/<int:id>', methods=['GET', 'POST'])
 def edit_announcement(id):
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()  # Assuming a `get_db()` function to get the SQLite3 connection
     cursor = conn.cursor()
 
@@ -1884,6 +1959,9 @@ def edit_announcement(id):
 
 @app.route('/delete_announcement/<int:id>', methods=['POST'])
 def delete_announcement(id):
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()  # Assuming a `get_db()` function to get the SQLite3 connection
     cursor = conn.cursor()
 
@@ -1905,6 +1983,9 @@ def delete_announcement(id):
 
 @app.route('/view_announcement/<int:announcement_id>')
 def view_announcement(announcement_id):
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()  # Assuming a `get_db()` function to get the SQLite3 connection
     cursor = conn.cursor()
 
@@ -1924,6 +2005,8 @@ def view_announcement(announcement_id):
 # # Route for Contact IT Team
 @app.route('/about_us')
 def about_us():
+    if 'role' not in session:
+        return redirect(url_for('login'))
     return render_template('about_us.html')
 
 if __name__ == "__main__":
