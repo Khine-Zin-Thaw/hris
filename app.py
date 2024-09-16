@@ -7,10 +7,9 @@ import os
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.secret_key = '123'
+app.secret_key = 'secret'
 
 logging.basicConfig(filename='app.log', level=logging.ERROR)
-
 
 # Define the upload folder and allowed extensions
 profile_folder = os.path.join('static', 'uploads')  # Ensure this folder exists
@@ -23,7 +22,6 @@ if not os.path.exists(app.config['UPLOAD_FOLDER']):
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 
 
 def get_db():
@@ -47,13 +45,15 @@ def index():
     cursor.execute("SELECT COUNT(*) FROM employee")
     total_employees = cursor.fetchone()[0]
 
-    cursor.execute("SELECT COUNT(*) FROM employee WHERE join_date >= date('now', 'start of month')")
+    cursor.execute(
+        "SELECT COUNT(*) FROM employee WHERE join_date >= date('now', 'start of month')")
     new_employees_this_month = cursor.fetchone()[0]
 
     cursor.execute("SELECT COUNT(*) FROM department")
     total_departments = cursor.fetchone()[0]
 
-    cursor.execute("SELECT employee_status, COUNT(*) FROM employee GROUP BY employee_status")
+    cursor.execute(
+        "SELECT employee_status, COUNT(*) FROM employee GROUP BY employee_status")
     employee_status_overview = cursor.fetchall()
 
     cursor.execute('''
@@ -64,26 +64,14 @@ def index():
     ''')
     attendance_trends = cursor.fetchall()
 
-    cursor.execute("SELECT title, small_description FROM announcements LIMIT 5")
-    announcements = cursor.fetchall()
-
     conn.close()
 
-    return render_template('index.html', 
-                           total_employees=total_employees, 
-                           new_employees_this_month=new_employees_this_month, 
-                           total_departments=total_departments, 
-                           employee_status_overview=employee_status_overview, 
-                           attendance_trends=attendance_trends, 
-                           announcements=announcements)
-
-
-@app.route('/userbase')
-def userbase():
-    if 'role' not in session:
-        return redirect(url_for('login'))
-    
-    return render_template('userbase.html')
+    return render_template('index.html',
+                           total_employees=total_employees,
+                           new_employees_this_month=new_employees_this_month,
+                           total_departments=total_departments,
+                           employee_status_overview=employee_status_overview,
+                           attendance_trends=attendance_trends)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -108,23 +96,29 @@ def login():
             session['role'] = user['role']
 
             # Fetch the employee's name and photo from the employee table
-            cursor.execute('SELECT emp_name, photo FROM employee WHERE emp_id = ?', (emp_id,))
+            cursor.execute(
+                'SELECT emp_name, photo FROM employee WHERE emp_id = ?', (emp_id,))
             result = cursor.fetchone()
 
             if result:
-                session['username'] = result['emp_name']  # Store employee name in session
-                session['photo'] = result['photo'] if result['photo'] else 'default-avatar.jpg'  # Handle photo
+                # Store employee name in session
+                session['username'] = result['emp_name']
+                # Handle photo
+                session['photo'] = result['photo'] if result['photo'] else 'default-avatar.jpg'
             else:
                 session['username'] = 'Unknown User'
-                session['photo'] = 'default-avatar.jpg'  # Use default photo if no photo is found
+                # Use default photo if no photo is found
+                session['photo'] = 'default-avatar.jpg'
 
             conn.close()
 
             # Redirect based on the role
             if session['role'] == 'staff':
-                return redirect(url_for('check_in'))  # Redirect staff to check-in page
+                # Redirect staff to check-in page
+                return redirect(url_for('check_in'))
             else:
-                return redirect(url_for('index'))  # Redirect others to index or dashboard
+                # Redirect others to index or dashboard
+                return redirect(url_for('index'))
 
         else:
             # Set error message if login fails
@@ -133,38 +127,12 @@ def login():
 
     return render_template('login.html')
 
+
 @app.route('/logout')
 def logout():
     session.pop('emp_id', None)
     session.pop('role', None)
     return redirect(url_for('login'))
-
-@app.route('/create_user', methods=['GET', 'POST'])
-def create_user():
-    if 'role' not in session or session['role'] != 'manager':
-        return 'Access denied', 403
-
-    if request.method == 'POST':
-        emp_id = request.form.get('emp_id')
-        password = request.form.get('password')
-        role = request.form.get('role')
-
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-
-        conn = get_db()
-        cursor = conn.cursor()
-
-        cursor.execute('''
-            INSERT INTO users (emp_id, password, role)
-            VALUES (?, ?, ?)
-        ''', (emp_id, hashed_password, role))
-
-        conn.commit()
-        conn.close()
-
-        return redirect(url_for('index'))
-
-    return render_template('create_user.html')
 
 
 @app.route('/add_department', methods=['GET', 'POST'])
@@ -177,15 +145,18 @@ def add_department():
 
     if request.method == 'POST':
         name = request.form['department_name']
-        leader_id = request.form.get('leader_id')  # Use .get() to handle missing values
+        # Use .get() to handle missing values
+        leader_id = request.form.get('leader_id')
 
         try:
             # Insert the new department with the selected leader (or NULL if no leader is selected)
-            cursor.execute('INSERT INTO department (name, leader_id) VALUES (?, ?)', (name, leader_id if leader_id else None))
+            cursor.execute('INSERT INTO department (name, leader_id) VALUES (?, ?)',
+                           (name, leader_id if leader_id else None))
 
             # Update the employee table to set the selected leader as a department leader
             if leader_id:
-                cursor.execute('UPDATE employee SET is_dept_leader = 1 WHERE emp_id = ?', (leader_id,))
+                cursor.execute(
+                    'UPDATE employee SET is_dept_leader = 1 WHERE emp_id = ?', (leader_id,))
 
             # Commit the transaction
             conn.commit()
@@ -218,7 +189,8 @@ def add_department():
     departments = cursor.fetchall()
 
     # Fetch all employees for the leader selection dropdown
-    cursor.execute('SELECT emp_id, emp_name FROM employee WHERE emp_id NOT IN (SELECT leader_id FROM department WHERE leader_id IS NOT NULL)')
+    cursor.execute(
+        'SELECT emp_id, emp_name FROM employee WHERE emp_id NOT IN (SELECT leader_id FROM department WHERE leader_id IS NOT NULL)')
     employees = cursor.fetchall()
 
     conn.close()
@@ -240,24 +212,29 @@ def edit_department(dept_id):
 
     if request.method == 'POST':
         department_name = request.form['department_name']
-        new_leader_id = request.form['leader_id'] if request.form.get('leader_id') else None
+        new_leader_id = request.form['leader_id'] if request.form.get(
+            'leader_id') else None
 
         try:
             # Get the current leader's ID (before the update)
-            cursor.execute('SELECT leader_id FROM department WHERE dept_id = ?', (dept_id,))
+            cursor.execute(
+                'SELECT leader_id FROM department WHERE dept_id = ?', (dept_id,))
             current_leader_id = cursor.fetchone()[0]
 
             # Update the department's name and leader
-            cursor.execute('UPDATE department SET name = ?, leader_id = ? WHERE dept_id = ?', (department_name, new_leader_id, dept_id))
+            cursor.execute('UPDATE department SET name = ?, leader_id = ? WHERE dept_id = ?',
+                           (department_name, new_leader_id, dept_id))
 
             # Update the employee table
             # 1. Remove the `is_dept_leader` flag from the previous leader
             if current_leader_id:
-                cursor.execute('UPDATE employee SET is_dept_leader = 0 WHERE emp_id = ?', (current_leader_id,))
+                cursor.execute(
+                    'UPDATE employee SET is_dept_leader = 0 WHERE emp_id = ?', (current_leader_id,))
 
             # 2. Set the `is_dept_leader` flag for the new leader
             if new_leader_id:
-                cursor.execute('UPDATE employee SET is_dept_leader = 1 WHERE emp_id = ?', (new_leader_id,))
+                cursor.execute(
+                    'UPDATE employee SET is_dept_leader = 1 WHERE emp_id = ?', (new_leader_id,))
 
             conn.commit()
             flash('Department updated successfully!')
@@ -270,7 +247,8 @@ def edit_department(dept_id):
         return redirect(url_for('add_department'))
 
     # GET request: Fetch the department details
-    cursor.execute('SELECT dept_id, name, leader_id FROM department WHERE dept_id = ?', (dept_id,))
+    cursor.execute(
+        'SELECT dept_id, name, leader_id FROM department WHERE dept_id = ?', (dept_id,))
     department = cursor.fetchone()
 
     # Fetch all employees (excluding current leaders or the current leader of this department)
@@ -295,7 +273,8 @@ def delete_department(dept_id):
 
     try:
         # Check if there are any positions associated with the department
-        cursor.execute('SELECT COUNT(*) FROM position WHERE dept_id = ?', (dept_id,))
+        cursor.execute(
+            'SELECT COUNT(*) FROM position WHERE dept_id = ?', (dept_id,))
         position_count = cursor.fetchone()[0]
 
         if position_count > 0:
@@ -346,7 +325,8 @@ def add_position():
 
         try:
             # Fetch department based on the selected team
-            cursor.execute('SELECT dept_id FROM team WHERE team_id = ?', (team_id,))
+            cursor.execute(
+                'SELECT dept_id FROM team WHERE team_id = ?', (team_id,))
             department_id = cursor.fetchone()[0]
 
             # Insert new position into the database with the inferred department
@@ -370,7 +350,8 @@ def add_position():
     teams = cursor.fetchall()
 
     # Pagination logic
-    page = request.args.get('page', 1, type=int)  # Get current page, default is 1
+    # Get current page, default is 1
+    page = request.args.get('page', 1, type=int)
     per_page = 5  # Number of positions to display per page
     offset = (page - 1) * per_page
 
@@ -387,7 +368,8 @@ def add_position():
     # Count total number of positions for pagination
     cursor.execute('SELECT COUNT(*) FROM position')
     total_positions = cursor.fetchone()[0]
-    total_pages = (total_positions + per_page - 1) // per_page  # Calculate total pages
+    total_pages = (total_positions + per_page -
+                   1) // per_page  # Calculate total pages
 
     conn.close()
 
@@ -406,7 +388,8 @@ def edit_position(pos_id):
         position_name = request.form['position_name']
         department_id = request.form['department']
         basic_salary = request.form['basic_salary']
-        team_id = request.form['team'] if request.form['team'] else None  # Handle no team case
+        # Handle no team case
+        team_id = request.form['team'] if request.form['team'] else None
 
         try:
             # Update the position's details
@@ -426,7 +409,8 @@ def edit_position(pos_id):
         return redirect(url_for('add_position'))
 
     # GET request: Fetch the current position details, list of departments, and teams
-    cursor.execute('SELECT pos_id, position_name, dept_id, basic_salary, team_id FROM position WHERE pos_id = ?', (pos_id,))
+    cursor.execute(
+        'SELECT pos_id, position_name, dept_id, basic_salary, team_id FROM position WHERE pos_id = ?', (pos_id,))
     position = cursor.fetchone()
 
     cursor.execute('SELECT dept_id, name FROM department')
@@ -445,15 +429,17 @@ def delete_position(pos_id):
     if 'role' not in session:
         return redirect(url_for('login'))
 
-    pos_id = request.form.get('pos_id')  # Extract the pos_id from the form data
+    # Extract the pos_id from the form data
+    pos_id = request.form.get('pos_id')
     conn = get_db()
     cursor = conn.cursor()
 
     try:
         # Check if any employees are assigned to this position
-        cursor.execute('SELECT COUNT(*) FROM employee WHERE pos_id = ?', (pos_id,))
+        cursor.execute(
+            'SELECT COUNT(*) FROM employee WHERE pos_id = ?', (pos_id,))
         employee_count = cursor.fetchone()[0]
-        
+
         if employee_count > 0:
             flash('Cannot delete position as it is assigned to one or more employees.')
             conn.close()
@@ -481,7 +467,7 @@ def delete_position(pos_id):
 
     return redirect(url_for('add_position'))
 
-    
+
 @app.route('/edit_user/<int:user_id>/<string:role>', methods=['GET', 'POST'])
 def edit_user(user_id, role):
     if 'role' not in session:
@@ -514,6 +500,7 @@ def edit_user(user_id, role):
     conn.close()
     return render_template('edit_user.html', user=user)
 
+
 @app.route('/delete_user/<int:user_id>/<string:role>', methods=['POST'])
 def delete_user(user_id, role):
     if 'role' not in session:
@@ -522,7 +509,8 @@ def delete_user(user_id, role):
     conn = get_db()
     cursor = conn.cursor()
 
-    cursor.execute('DELETE FROM users WHERE user_id = ? AND role = ?', (user_id, role))
+    cursor.execute(
+        'DELETE FROM users WHERE user_id = ? AND role = ?', (user_id, role))
     conn.commit()
 
     conn.close()
@@ -573,9 +561,11 @@ def check_employee_accounts():
     employees_with_accounts = cursor.fetchall()
 
     # Count total number of employees with accounts
-    cursor.execute('SELECT COUNT(*) FROM employee e JOIN users u ON e.emp_id = u.emp_id')
+    cursor.execute(
+        'SELECT COUNT(*) FROM employee e JOIN users u ON e.emp_id = u.emp_id')
     total_employees_with_accounts = cursor.fetchone()[0]
-    total_pages_employees = (total_employees_with_accounts + per_page_employees - 1) // per_page_employees
+    total_pages_employees = (
+        total_employees_with_accounts + per_page_employees - 1) // per_page_employees
 
     # Fetch employees without accounts (no pagination)
     cursor.execute('''
@@ -600,12 +590,14 @@ def check_employee_accounts():
         total_pages_employees=total_pages_employees
     )
 
+
 @app.route('/add_users', methods=['POST'])
 def add_users():
     if 'role' not in session:
         return redirect(url_for('login'))
 
-    selected_employees = request.form.getlist('emp_ids')  # List of selected employee IDs
+    selected_employees = request.form.getlist(
+        'emp_ids')  # List of selected employee IDs
     password = request.form.get('password')
     role = request.form.get('role')
 
@@ -640,6 +632,7 @@ def add_users():
     flash('User accounts created successfully!')
     return redirect(url_for('check_employee_accounts'))
 
+
 @app.route('/myinfo')
 def myinfo():
     if 'role' not in session:
@@ -659,9 +652,9 @@ def myinfo():
         LEFT JOIN team t ON d.leader_id = t.team_id  -- Joining the team table to get team details
         WHERE e.emp_id = ?
     ''', (emp_id,))
-    
+
     employee = cursor.fetchone()  # Fetch one record for the specific employee
-    
+
     conn.close()
 
     if not employee:
@@ -679,7 +672,8 @@ def add_employee():
     cursor = conn.cursor()
 
     # Pagination setup
-    page = request.args.get('page', 1, type=int)  # Get current page, default to 1
+    # Get current page, default to 1
+    page = request.args.get('page', 1, type=int)
     per_page = 10  # Number of employees to display per page
     offset = (page - 1) * per_page  # Calculate the offset for SQL query
 
@@ -710,7 +704,8 @@ def add_employee():
     # Count total employees for pagination
     cursor.execute('SELECT COUNT(*) FROM employee')
     total_employees = cursor.fetchone()[0]
-    total_pages = (total_employees + per_page - 1) // per_page  # Calculate total pages
+    total_pages = (total_employees + per_page -
+                   1) // per_page  # Calculate total pages
 
     if request.method == 'POST':
         # Capture form data
@@ -739,10 +734,14 @@ def add_employee():
         photo_filename = None  # Default if no photo is uploaded
         if photo and photo.filename != '':  # Check if the file exists
             print(f"Photo detected: {photo.filename}")  # Debugging statement
-            if allowed_file(photo.filename):  # Assuming you have an 'allowed_file' function to validate extensions
+            # Assuming you have an 'allowed_file' function to validate extensions
+            if allowed_file(photo.filename):
                 photo_filename = secure_filename(photo.filename)
-                print(f"Saving photo as: {photo_filename}")  # Debugging statement
-                photo.save(os.path.join(app.config['UPLOAD_FOLDER'], photo_filename))  # Save file
+                # Debugging statement
+                print(f"Saving photo as: {photo_filename}")
+                # Save file
+                photo.save(os.path.join(
+                    app.config['UPLOAD_FOLDER'], photo_filename))
             else:
                 flash('Invalid photo format or no photo uploaded.')
                 return redirect(url_for('add_employee'))
@@ -784,7 +783,8 @@ def add_employee():
                 ''', (emp_id, position_id, department_id, None, 'new_join', join_date))  # Assuming team_id is None initially
 
                 conn.commit()
-                flash('Employee added successfully with photo!' if photo_filename else 'Employee added successfully without photo!')
+                flash(
+                    'Employee added successfully with photo!' if photo_filename else 'Employee added successfully without photo!')
 
         except sqlite3.Error as e:
             conn.rollback()
@@ -840,17 +840,21 @@ def edit_employee(emp_id):
         # Handle profile picture upload
         photo = request.files.get('photo')
         if photo and photo.filename != '':
-            if allowed_file(photo.filename):  # Assuming you have a function 'allowed_file' to validate file types
+            # Assuming you have a function 'allowed_file' to validate file types
+            if allowed_file(photo.filename):
                 photo_filename = secure_filename(photo.filename)
-                photo.save(os.path.join(app.config['UPLOAD_FOLDER'], photo_filename))
+                photo.save(os.path.join(
+                    app.config['UPLOAD_FOLDER'], photo_filename))
             else:
                 flash('Invalid photo format', 'danger')
                 return redirect(url_for('edit_employee', emp_id=emp_id))
         else:
-            photo_filename = employee[10]  # Keep old photo if no new one is uploaded
+            # Keep old photo if no new one is uploaded
+            photo_filename = employee[10]
 
         # Fetch the new position's basic salary
-        cursor.execute('SELECT basic_salary FROM position WHERE pos_id = ?', (position_id,))
+        cursor.execute(
+            'SELECT basic_salary FROM position WHERE pos_id = ?', (position_id,))
         basic_salary = cursor.fetchone()[0]
 
         try:
@@ -869,7 +873,8 @@ def edit_employee(emp_id):
             ''', (basic_salary, emp_id))
 
             conn.commit()
-            flash('Employee updated successfully, including new salary based on position!', 'success')
+            flash(
+                'Employee updated successfully, including new salary based on position!', 'success')
         except sqlite3.Error as e:
             conn.rollback()
             flash(f'An error occurred: {e}', 'danger')
@@ -913,14 +918,14 @@ def check_in():
         status = request.form['status']
         emp_id = session['emp_id']
         today = datetime.now().strftime('%Y-%m-%d')
-        
+
         # Check if a record for today already exists
         cursor.execute('''
             SELECT attendance_id FROM attendance
             WHERE emp_id = ? AND date = ?
         ''', (emp_id, today))
         existing_record = cursor.fetchone()
-        
+
         if existing_record:
             # Update the existing record
             cursor.execute('''
@@ -934,33 +939,24 @@ def check_in():
                 INSERT INTO attendance (emp_id, date, status)
                 VALUES (?, ?, ?)
             ''', (emp_id, today, status))
-        
+
         conn.commit()
 
     # Fetch attendance records for the current week
     today = datetime.now()
     start_of_week = today - timedelta(days=today.weekday())
     end_of_week = start_of_week + timedelta(days=6)
-    
+
     cursor.execute('''
         SELECT date, status
         FROM attendance
         WHERE emp_id = ? AND date BETWEEN ? AND ?
     ''', (session['emp_id'], start_of_week.strftime('%Y-%m-%d'), end_of_week.strftime('%Y-%m-%d')))
-    
+
     attendance = cursor.fetchall()
-    
-    # Fetch the last 4 or 5 announcements
-    cursor.execute('''
-        SELECT id, title, small_description, photo 
-        FROM announcements 
-        ORDER BY id DESC 
-        LIMIT 4
-    ''')
-    announcements = cursor.fetchall()
 
     conn.close()
-    return render_template('check_in.html', attendance=attendance, announcements=announcements)
+    return render_template('check_in.html', attendance=attendance)
 
 
 @app.route('/view_attendance', methods=['GET', 'POST'])
@@ -1003,7 +999,8 @@ def view_attendance():
     # Get the current month
     today = datetime.now()
     start_of_month = today.replace(day=1)
-    end_of_month = (start_of_month + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+    end_of_month = (start_of_month + timedelta(days=32)
+                    ).replace(day=1) - timedelta(days=1)
 
     # Fetch attendance records for the whole month with pagination
     cursor.execute('''
@@ -1014,7 +1011,7 @@ def view_attendance():
         ORDER BY a.date DESC
         LIMIT ? OFFSET ?
     ''', (start_of_month.strftime('%Y-%m-%d'), end_of_month.strftime('%Y-%m-%d'), per_page, offset))
-    
+
     attendance = cursor.fetchall()
 
     # Count total attendance records for pagination
@@ -1066,6 +1063,7 @@ def edit_attendance(emp_id, date):
     conn.close()
     return render_template('edit_attendance.html', emp_id=emp_id, date=date, status=attendance_record['status'])
 
+
 @app.route('/delete_attendance/<int:emp_id>/<date>', methods=['POST'])
 def delete_attendance(emp_id, date):
     if 'role' not in session:
@@ -1096,7 +1094,8 @@ def payroll_landing():
     cursor = conn.cursor()
 
     # Pagination variables
-    page = request.args.get('page', 1, type=int)  # Get current page, default to 1
+    # Get current page, default to 1
+    page = request.args.get('page', 1, type=int)
     per_page = 5  # Records per page
     offset = (page - 1) * per_page  # Calculate offset
 
@@ -1104,7 +1103,8 @@ def payroll_landing():
         emp_id = session.get('emp_id')  # Ensure emp_id is set in the session
 
         # Count total records for pagination
-        cursor.execute('SELECT COUNT(*) FROM payroll WHERE emp_id = ?', (emp_id,))
+        cursor.execute(
+            'SELECT COUNT(*) FROM payroll WHERE emp_id = ?', (emp_id,))
         total_records = cursor.fetchone()[0]
 
         # Fetch paginated records
@@ -1140,6 +1140,7 @@ def payroll_landing():
 
     return render_template('payroll_landing.html', payroll_data=payroll_data, page=page, total_pages=total_pages)
 
+
 @app.route('/calculate_payroll', methods=['POST'])
 def calculate_payroll():
     if session.get('role') != 'manager':
@@ -1149,12 +1150,14 @@ def calculate_payroll():
 
     try:
         # Fetch current payroll settings
-        settings = db.execute('SELECT default_ssb, tax_percentage FROM payroll_settings').fetchone()
+        settings = db.execute(
+            'SELECT default_ssb, tax_percentage FROM payroll_settings').fetchone()
         ssb_amount = settings['default_ssb']
         tax_percentage = settings['tax_percentage']
 
         # Get all employees
-        employees = db.execute('SELECT emp_id, basic_salary FROM payroll').fetchall()
+        employees = db.execute(
+            'SELECT emp_id, basic_salary FROM payroll').fetchall()
 
         for employee in employees:
             emp_id = employee['emp_id']
@@ -1168,12 +1171,15 @@ def calculate_payroll():
                 GROUP BY status
             ''', (emp_id,)).fetchall()
 
-            total_present = next((record['count'] for record in attendance if record['status'] == 'Present'), 0)
-            total_leave = next((record['count'] for record in attendance if record['status'] == 'Leave'), 0)
+            total_present = next(
+                (record['count'] for record in attendance if record['status'] == 'Present'), 0)
+            total_leave = next(
+                (record['count'] for record in attendance if record['status'] == 'Leave'), 0)
 
             # Calculate daily salary and monthly payout
             daily_salary = basic_salary / 30
-            monthly_payout = (daily_salary * total_present) + (daily_salary * total_leave)
+            monthly_payout = (daily_salary * total_present) + \
+                (daily_salary * total_leave)
             monthly_payout = round(monthly_payout, 2)
 
             # Calculate tax
@@ -1216,16 +1222,19 @@ def payroll_settings():
         try:
             # Update payroll settings in the database
             if default_ssb:
-                db.execute('UPDATE payroll_settings SET default_ssb = ?', (default_ssb,))
+                db.execute(
+                    'UPDATE payroll_settings SET default_ssb = ?', (default_ssb,))
             if tax_percentage:
-                db.execute('UPDATE payroll_settings SET tax_percentage = ?', (tax_percentage,))
-            
+                db.execute(
+                    'UPDATE payroll_settings SET tax_percentage = ?', (tax_percentage,))
+
             # Update existing employee payroll records
             if default_ssb:
                 db.execute('UPDATE payroll SET ssb = ?', (default_ssb,))
             if tax_percentage:
-                db.execute('UPDATE payroll SET tax = monthly_payout * ? / 100', (tax_percentage,))
-            
+                db.execute(
+                    'UPDATE payroll SET tax = monthly_payout * ? / 100', (tax_percentage,))
+
             db.commit()
             session['success'] = 'Settings updated successfully!'
         except Exception as e:
@@ -1234,7 +1243,8 @@ def payroll_settings():
         return redirect(url_for('payroll_settings'))
 
     # Fetch current settings from payroll_settings table
-    settings = db.execute('SELECT default_ssb, tax_percentage FROM payroll_settings').fetchone()
+    settings = db.execute(
+        'SELECT default_ssb, tax_percentage FROM payroll_settings').fetchone()
 
     # Provide default values if settings are not found
     current_ssb_amount = settings['default_ssb'] if settings else 6000.0
@@ -1261,13 +1271,15 @@ def edit_payroll(emp_id):
         # Update payroll with edit reason
         db.execute(
             'UPDATE payroll SET basic_salary = ?, tax = ?, ssb = ?, monthly_payout = ?, net_salary = ?, edit_reason = ? WHERE emp_id = ?',
-            (basic_salary, tax, ssb, monthly_payout, net_salary, edit_reason, emp_id)
+            (basic_salary, tax, ssb, monthly_payout,
+             net_salary, edit_reason, emp_id)
         )
         db.commit()
         session['success'] = 'Payroll updated successfully!'
         return redirect(url_for('payroll_landing'))
 
-    payroll_data = db.execute('SELECT * FROM payroll WHERE emp_id = ?', (emp_id,)).fetchone()
+    payroll_data = db.execute(
+        'SELECT * FROM payroll WHERE emp_id = ?', (emp_id,)).fetchone()
     return render_template('edit_payroll.html', payroll_data=payroll_data)
 
 
@@ -1320,6 +1332,7 @@ def reset_payroll():
 
     return redirect(url_for('payroll_landing'))
 
+
 @app.route('/view_archived_payroll', methods=['GET', 'POST'])
 def view_archived_payroll():
     if 'role' not in session or session['role'] not in ['manager', 'payroll_admin']:
@@ -1329,9 +1342,12 @@ def view_archived_payroll():
     cursor = conn.cursor()
 
     archived_payroll_data = []
-    selected_month = request.args.get('month')  # Get selected month from the query params
-    selected_year = request.args.get('year')  # Get selected year from the query params
-    page = request.args.get('page', 1, type=int)  # Get current page, default to 1
+    # Get selected month from the query params
+    selected_month = request.args.get('month')
+    # Get selected year from the query params
+    selected_year = request.args.get('year')
+    # Get current page, default to 1
+    page = request.args.get('page', 1, type=int)
     per_page = 5  # Records per page
 
     if request.method == 'POST':
@@ -1381,6 +1397,7 @@ def view_archived_payroll():
         total_pages=total_pages
     )
 
+
 @app.route('/my_payroll', methods=['GET'])
 def my_payroll():
     if 'emp_id' not in session:
@@ -1414,34 +1431,11 @@ def my_payroll():
     }
     for row in payroll_data:
         record = dict(row)  # Convert sqlite3.Row to a dictionary
-        record['month'] = month_names.get(record['month'], record['month'])  # Default to numeric month if not found
+        # Default to numeric month if not found
+        record['month'] = month_names.get(record['month'], record['month'])
         payroll_data_list.append(record)
 
     return render_template('my_payroll.html', payroll_data=payroll_data_list, current_year=current_year)
-
-
-@app.route('/payroll', methods=['GET'])
-def payroll():
-    if 'role' not in session or session['role'] not in ['manager', 'payroll_admin', 'staff', 'recruit_admin']:
-        return 'Access denied', 403
-
-    conn = get_db()
-    cursor = conn.cursor()
-
-    emp_id = session.get('emp_id')  # Ensure emp_id is set in the session
-
-    cursor.execute('''
-            SELECT p.emp_id, e.emp_name AS name, p.basic_salary, p.tax, p.ssb, p.monthly_payout, 
-                   p.net_salary, p.total_present, p.total_leave, p.edit_reason
-            FROM payroll p
-            JOIN employee e ON p.emp_id = e.emp_id
-            WHERE p.emp_id = ?
-        ''', (emp_id,))
-
-    payroll_data = cursor.fetchall()
-    conn.close()
-
-    return render_template('my_payroll.html', payroll_data=payroll_data)
 
 
 @app.route('/teams', methods=['GET', 'POST'])
@@ -1468,7 +1462,8 @@ def teams():
                     INSERT INTO team (team_name, dept_id, leader_id) 
                     VALUES (?, ?, ?)
                 ''', (team_name, department_id, team_leader_id))
-                cursor.execute('UPDATE employee SET is_team_leader = 1 WHERE emp_id = ?', (team_leader_id,))
+                cursor.execute(
+                    'UPDATE employee SET is_team_leader = 1 WHERE emp_id = ?', (team_leader_id,))
             else:
                 cursor.execute('''
                     INSERT INTO team (team_name, dept_id, leader_id) 
@@ -1484,13 +1479,14 @@ def teams():
 
     # Pagination settings
     per_page = 5  # Number of teams per page
-    page = request.args.get('page', 1, type=int)  # Get the current page from query params, default to 1
+    # Get the current page from query params, default to 1
+    page = request.args.get('page', 1, type=int)
     offset = (page - 1) * per_page  # Calculate the offset
 
     # Fetch total number of teams for pagination
     cursor.execute('SELECT COUNT(*) FROM team')
     total_teams = cursor.fetchone()[0]
-    
+
     # Fetch teams with departments and leaders for the current page
     cursor.execute('''
         SELECT t.team_id, t.team_name, d.name AS department_name, e.emp_name AS leader_name
@@ -1517,12 +1513,13 @@ def teams():
 
     conn.close()
 
-    return render_template('teams.html', 
-                           teams=teams, 
-                           departments=departments, 
-                           employees=employees, 
-                           page=page, 
+    return render_template('teams.html',
+                           teams=teams,
+                           departments=departments,
+                           employees=employees,
+                           page=page,
                            total_pages=total_pages)
+
 
 @app.route('/delete_team/<int:team_id>', methods=['POST'])
 def delete_team(team_id):
@@ -1545,117 +1542,6 @@ def delete_team(team_id):
     return redirect(url_for('teams'))
 
 
-@app.route('/add_employee_to_team/<int:team_id>', methods=['GET', 'POST'])
-def add_employee_to_team(team_id):
-    if 'role' not in session:
-        return redirect(url_for('login'))
-
-    conn = get_db()
-    cursor = conn.cursor()
-
-    if request.method == 'POST':
-        emp_id = request.form.get('emp_id')
-
-        # Validate that emp_id is provided and employee exists
-        if not emp_id:
-            flash('Please select an employee.')
-            return redirect(url_for('add_employee_to_team', team_id=team_id))
-
-        # Check if the employee is already assigned to a team
-        cursor.execute('SELECT team_id FROM employee WHERE emp_id = ?', (emp_id,))
-        existing_team = cursor.fetchone()
-        
-        if existing_team and existing_team[0]:
-            flash('This employee is already assigned to a team.')
-            return redirect(url_for('add_employee_to_team', team_id=team_id))
-
-        try:
-            # Update the employee's team in the employee table
-            cursor.execute('UPDATE employee SET team_id = ? WHERE emp_id = ?', (team_id, emp_id))
-            conn.commit()
-            flash('Employee added to the team successfully!')
-
-        except sqlite3.Error as e:
-            conn.rollback()
-            flash(f'An error occurred: {e}')
-
-        finally:
-            conn.close()
-
-        return redirect(url_for('view_team', team_id=team_id))
-
-    try:
-        # Fetch the team details
-        cursor.execute('SELECT team_id, team_name FROM team WHERE team_id = ?', (team_id,))
-        team = cursor.fetchone()
-
-        if not team:
-            flash('Team not found.')
-            return redirect(url_for('teams'))
-
-        # Fetch employees who are not assigned to a team
-        cursor.execute('SELECT emp_id, emp_name FROM employee WHERE team_id IS NULL')
-        employees = cursor.fetchall()
-
-        # Fetch employees currently assigned to this team
-        cursor.execute('''
-            SELECT e.emp_id, e.emp_name 
-            FROM employee e
-            WHERE e.team_id = ?
-        ''', (team_id,))
-        team_employees = cursor.fetchall()
-
-    except sqlite3.Error as e:
-        flash(f'An error occurred: {e}')
-        employees = team_employees = []
-
-    finally:
-        conn.close()
-
-    return render_template('add_employee_to_team.html', team=team, employees=employees, team_employees=team_employees)
-
-
-@app.route('/view_team/<int:team_id>')
-def view_team(team_id):
-    if 'role' not in session:
-        return redirect(url_for('login'))
-
-    conn = get_db()
-    cursor = conn.cursor()
-
-    try:
-        # Fetch the team details
-        cursor.execute('''
-            SELECT t.team_id, t.team_name, d.name AS department_name, e.emp_name AS leader_name
-            FROM team t
-            LEFT JOIN department d ON t.dept_id = d.dept_id
-            LEFT JOIN employee e ON t.leader_id = e.emp_id
-            WHERE t.team_id = ?
-        ''', (team_id,))
-        team = cursor.fetchone()
-
-        if not team:
-            flash('Team not found.')
-            return redirect(url_for('teams'))
-
-        # Fetch employees assigned to this team
-        cursor.execute('''
-            SELECT e.emp_id, e.emp_name
-            FROM employee e
-            WHERE e.team_id = ?
-        ''', (team_id,))
-        employees = cursor.fetchall()
-
-    except sqlite3.Error as e:
-        flash(f'An error occurred: {e}')
-        employees = []
-
-    finally:
-        conn.close()
-
-    return render_template('view_team.html', team=team, employees=employees)
-
-
 @app.route('/edit_team/<int:team_id>', methods=['GET', 'POST'])
 def edit_team(team_id):
     if 'role' not in session:
@@ -1676,7 +1562,8 @@ def edit_team(team_id):
                 return redirect(url_for('edit_team', team_id=team_id))
 
             # Get the current leader's ID (before the update)
-            cursor.execute('SELECT leader_id FROM team WHERE team_id = ?', (team_id,))
+            cursor.execute(
+                'SELECT leader_id FROM team WHERE team_id = ?', (team_id,))
             current_team_leader = cursor.fetchone()
 
             current_team_leader_id = current_team_leader[0] if current_team_leader else None
@@ -1690,11 +1577,13 @@ def edit_team(team_id):
 
             # Reset the `is_team_leader` flag for the current leader if it is changing
             if current_team_leader_id and current_team_leader_id != new_team_leader_id:
-                cursor.execute('UPDATE employee SET is_team_leader = 0 WHERE emp_id = ?', (current_team_leader_id,))
+                cursor.execute(
+                    'UPDATE employee SET is_team_leader = 0 WHERE emp_id = ?', (current_team_leader_id,))
 
             # Set the `is_team_leader` flag for the new leader
             if new_team_leader_id:
-                cursor.execute('UPDATE employee SET is_team_leader = 1 WHERE emp_id = ?', (new_team_leader_id,))
+                cursor.execute(
+                    'UPDATE employee SET is_team_leader = 1 WHERE emp_id = ?', (new_team_leader_id,))
 
             conn.commit()
             flash('Team updated successfully!', 'success')
@@ -1702,7 +1591,8 @@ def edit_team(team_id):
             return redirect(url_for('teams'))
 
         # GET request: Fetch the current team details to display in the form
-        cursor.execute('SELECT team_id, team_name, dept_id, leader_id FROM team WHERE team_id = ?', (team_id,))
+        cursor.execute(
+            'SELECT team_id, team_name, dept_id, leader_id FROM team WHERE team_id = ?', (team_id,))
         team = cursor.fetchone()
 
         if not team:
@@ -1745,7 +1635,7 @@ def contact_us():
         FROM team t
         JOIN employee e ON t.leader_id = e.emp_id
     ''')
-    
+
     teams = cursor.fetchall()
 
     # Pass the team details to the template
@@ -1774,19 +1664,19 @@ def submit_feedback():
     try:
         conn = get_db()
         cursor = conn.cursor()
-        
+
         cursor.execute('''
             INSERT INTO feedback (staff_name, problem_description, team_id, submission_date)
             VALUES (?, ?, ?, ?)
         ''', (staff_name, problem_description, team_id, submission_date))
-        
+
         conn.commit()
         flash('Feedback submitted successfully!', 'success')
-        
+
     except sqlite3.Error as e:
         conn.rollback()
         flash(f'An error occurred while submitting feedback: {e}', 'danger')
-    
+
     finally:
         conn.close()
     return redirect(url_for('contact_us'))
@@ -1822,193 +1712,17 @@ def my_attendance():
 
     conn.close()
 
-    return render_template('my_attendance.html', 
-                           positions=positions, 
+    return render_template('my_attendance.html',
+                           positions=positions,
                            attendance_records=attendance_records)
 
 
-@app.route('/add_announcement', methods=['GET', 'POST'])
-def add_announcement():
-    if 'role' not in session:
-        return redirect(url_for('login'))
-
-    conn = get_db()
-    cursor = conn.cursor()
-
-    # Pagination logic for announcements
-    per_page = 5  # Announcements per page
-    page = request.args.get('page', 1, type=int)
-    offset = (page - 1) * per_page
-
-    # Fetch the total announcement count for pagination
-    cursor.execute('SELECT COUNT(*) FROM announcements')
-    total_announcements = cursor.fetchone()[0]
-
-    # Fetch the announcements for the current page
-    cursor.execute('''
-        SELECT id, title, label, small_description, photo
-        FROM announcements
-        LIMIT ? OFFSET ?
-    ''', (per_page, offset))
-    announcements = cursor.fetchall()
-
-    # Calculate the total number of pages for announcements
-    total_pages = (total_announcements + per_page - 1) // per_page
-
-    if request.method == 'POST':
-        # Get form data
-        title = request.form['title']
-        label = request.form['label']
-        small_description = request.form['small_description']
-        description = request.form['description']
-
-        # Handle photo upload
-        photo_filename = None  # Default if no photo is uploaded
-        if 'photo' in request.files:
-            photo = request.files['photo']
-            if photo.filename != '':  # Check if the file has a valid filename
-                print(f"Photo detected: {photo.filename}")  # Debugging statement
-                if allowed_file(photo.filename):  # Validate the file extension
-                    photo_filename = secure_filename(photo.filename)
-                    print(f"Saving photo as: {photo_filename}")  # Debugging statement
-                    # Save the file in the configured upload folder
-                    photo.save(os.path.join(app.config['UPLOAD_FOLDER'], photo_filename))
-                else:
-                    flash('Invalid photo format. Please upload a valid image.', 'danger')
-                    return redirect(url_for('add_announcement'))
-            else:
-                flash('No selected file', 'danger')
-                return redirect(url_for('add_announcement'))
-        else:
-            flash('No photo uploaded. Please upload an image.', 'danger')
-            return redirect(url_for('add_announcement'))
-
-        # Insert data into the database
-        cursor.execute('''
-            INSERT INTO announcements (title, label, small_description, description, photo)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (title, label, small_description, description, photo_filename))
-        conn.commit()
-        flash('Announcement added successfully!', 'success')
-        return redirect(url_for('add_announcement'))
-
-    conn.close()
-
-    # Render the template with announcements and pagination information
-    return render_template('add_announcement.html', 
-                           announcements=announcements, 
-                           page=page, 
-                           total_pages=total_pages)
-
-@app.route('/edit_announcement/<int:id>', methods=['GET', 'POST'])
-def edit_announcement(id):
-    if 'role' not in session:
-        return redirect(url_for('login'))
-
-    conn = get_db()  # Assuming a `get_db()` function to get the SQLite3 connection
-    cursor = conn.cursor()
-
-    # Fetch the announcement to be edited
-    cursor.execute('SELECT * FROM announcements WHERE id = ?', (id,))
-    announcement = cursor.fetchone()
-
-    if request.method == 'POST':
-        # Get form data
-        title = request.form['title']
-        label = request.form['label']
-        small_description = request.form['small_description']
-        description = request.form['description']
-
-        # Handle file upload if there is one
-        if 'photo' in request.files:
-            file = request.files['photo']
-            if file.filename != '' and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
-                # Update with new photo
-                cursor.execute('''
-                    UPDATE announcements 
-                    SET title = ?, label = ?, small_description = ?, description = ?, photo = ?
-                    WHERE id = ?
-                ''', (title, label, small_description, description, filename, id))
-            else:
-                # Update without changing the photo
-                cursor.execute('''
-                    UPDATE announcements 
-                    SET title = ?, label = ?, small_description = ?, description = ?
-                    WHERE id = ?
-                ''', (title, label, small_description, description, id))
-        else:
-            # Update without changing the photo
-            cursor.execute('''
-                UPDATE announcements 
-                SET title = ?, label = ?, small_description = ?, description = ?
-                WHERE id = ?
-            ''', (title, label, small_description, description, id))
-
-        conn.commit()
-        conn.close()
-
-        flash('Announcement updated successfully!', 'success')
-        return redirect(url_for('add_announcement'))
-
-    conn.close()
-
-    return render_template('edit_announcement.html', announcement=announcement)
-
-@app.route('/delete_announcement/<int:id>', methods=['POST'])
-def delete_announcement(id):
-    if 'role' not in session:
-        return redirect(url_for('login'))
-
-    conn = get_db()  # Assuming a `get_db()` function to get the SQLite3 connection
-    cursor = conn.cursor()
-
-    # Fetch the photo filename for removal from the uploads folder
-    cursor.execute('SELECT photo FROM announcements WHERE id = ?', (id,))
-    photo_filename = cursor.fetchone()
-
-    # Remove the announcement from the database
-    cursor.execute('DELETE FROM announcements WHERE id = ?', (id,))
-    conn.commit()
-    conn.close()
-
-    # If the announcement had a photo, remove it from the file system
-    if photo_filename and os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], photo_filename[0])):
-        os.remove(os.path.join(app.config['UPLOAD_FOLDER'], photo_filename[0]))
-
-    flash('Announcement deleted successfully!', 'success')
-    return redirect(url_for('add_announcement'))
-
-@app.route('/view_announcement/<int:announcement_id>')
-def view_announcement(announcement_id):
-    if 'role' not in session:
-        return redirect(url_for('login'))
-
-    conn = get_db()  # Assuming a `get_db()` function to get the SQLite3 connection
-    cursor = conn.cursor()
-
-    # Fetch the announcement by ID
-    cursor.execute('SELECT * FROM announcements WHERE id = ?', (announcement_id,))
-    announcement = cursor.fetchone()
-
-    if announcement is None:
-        flash('Announcement not found', 'danger')
-        return redirect(url_for('slider'))  # Redirect to the slider page if not found
-
-    conn.close()
-
-    # Pass the announcement data to the template for detailed view
-    return render_template('view_announcement.html', announcement=announcement)
-
-# # Route for Contact IT Team
 @app.route('/about_us')
 def about_us():
     if 'role' not in session:
         return redirect(url_for('login'))
     return render_template('about_us.html')
 
+
 if __name__ == "__main__":
     app.run(debug=True)
-

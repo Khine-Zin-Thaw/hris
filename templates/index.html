@@ -84,24 +84,6 @@
       </div>
     </div>
 
-    <!-- Recent Announcements -->
-    <div class="col-lg-4 mb-4">
-      <div class="card">
-        <div class="card-header">
-          <h5 class="card-title">Recent Announcements</h5>
-        </div>
-        <div class="card-body">
-          <ul class="list-unstyled">
-            {% for announcement in announcements %}
-              <li class="mb-2">
-                <strong>{{ announcement.title }}</strong>
-                <p class="text-muted">{{ announcement.small_description }}</p>
-              </li>
-            {% endfor %}
-          </ul>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 </div>

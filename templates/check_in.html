@@ -2,39 +2,6 @@
 
 {% block content %}
 <div class="container">
-    <div>
-        <div class="slider">
-            <!-- Navigation dots -->
-            <input type="radio" name="slider" class="slider__nav" id="nav1" checked>
-            <input type="radio" name="slider" class="slider__nav" id="nav2">
-            <input type="radio" name="slider" class="slider__nav" id="nav3">
-            <input type="radio" name="slider" class="slider__nav" id="nav4">
-        
-            <!-- Carousel content -->
-            <div class="slider__inner">
-                {% for announcement in announcements %}
-                <div class="slider__contents" id="slide{{ loop.index }}">
-                    <div class="slider__overlay"></div> <!-- Add overlay for text contrast -->
-            
-                    <!-- Image for the slider -->
-                    <img src="{{ url_for('static', filename='uploads/' ~ announcement[3]) }}" alt="{{ announcement[1] }}" class="slider__image" />
-            
-                    <!-- Caption and description -->
-                    <h2 class="slider__caption">{{ announcement[1] }}</h2> <!-- Title of the announcement -->
-                    <p class="slider__txt">{{ announcement[2] }}</p> <!-- Small description of the announcement -->
-                </div>
-                {% endfor %}
-            </div>
-                    
-            <!-- Dots navigation -->
-            <div class="carousel-controls">
-                <label for="nav1" class="carousel-control"></label>
-                <label for="nav2" class="carousel-control"></label>
-                <label for="nav3" class="carousel-control"></label>
-                <label for="nav4" class="carousel-control"></label>
-            </div>
-        </div>
-                
         <!-- Card Section -->
         <div class="card mt-3 text-center">
             <!-- Flash Messages Section -->
