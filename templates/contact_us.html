@@ -20,13 +20,15 @@
                                 class="img-fluid rounded-circle profile-photo">
                             {% endif %}
                         </div>
-                        <p>Email: {{ team.email }}</p>
+                        <p>Email: <a href="mailto:{{ team.email }}">{{ team.email }}</a></p> <!-- mailto link -->
                         <p>Phone: {{ team.phone_number }}</p>
                     </div>
                 </div>
                 {% endfor %}
             </div>
         </div>
+    </div>
+    
 
         <!-- Feedback Form Section -->
         <div class="col-lg-5">

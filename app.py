@@ -532,7 +532,7 @@ def check_employee_accounts():
 
     # Fetch paginated users with name
     cursor.execute('''
-    SELECT u.user_id, e.emp_name, u.role
+    SELECT u.user_id, e.emp_id, e.emp_name, u.role
     FROM users u
     JOIN employee e ON u.emp_id = e.emp_id
     LIMIT ? OFFSET ?
@@ -590,6 +590,64 @@ def check_employee_accounts():
         total_pages_employees=total_pages_employees
     )
 
+@app.route('/reset_password/<int:user_id>', methods=['GET', 'POST'])
+def reset_password(user_id):
+    if 'role' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Ensure the SQL query fetches the correct columns, including user_id
+    cursor.execute('''
+        SELECT e.emp_name, u.user_id  -- Ensure user_id is selected
+        FROM users u 
+        JOIN employee e ON u.emp_id = e.emp_id 
+        WHERE u.user_id = ?
+    ''', (user_id,))
+    user = cursor.fetchone()
+
+    if not user:
+        flash('User not found.', 'danger')
+        return redirect(url_for('check_employee_accounts'))
+
+    if request.method == 'POST':
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        if not new_password or not confirm_password:
+            flash('Both password fields are required.', 'danger')
+            return redirect(url_for('reset_password', user_id=user_id))
+
+        if new_password != confirm_password:
+            flash('Passwords do not match.', 'danger')
+            return redirect(url_for('reset_password', user_id=user_id))
+
+        # Hash the new password using bcrypt
+        hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+
+        try:
+            cursor.execute('''
+                UPDATE users
+                SET password = ?
+                WHERE user_id = ?
+            ''', (hashed_password, user_id))
+
+            conn.commit()
+            flash('Password reset successfully!', 'success')
+
+        except sqlite3.Error as e:
+            conn.rollback()
+            flash(f'An error occurred while resetting the password: {e}', 'danger')
+
+        finally:
+            conn.close()
+
+        return redirect(url_for('check_employee_accounts'))
+
+    conn.close()
+
+    return render_template('reset_password.html', user=user)
 
 @app.route('/add_users', methods=['POST'])
 def add_users():
