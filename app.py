@@ -16,15 +16,12 @@
 from datetime import datetime, timedelta
 import sqlite3
 import os
-import logging
 import bcrypt
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = 'secret'
-
-logging.basicConfig(filename='app.log', level=logging.ERROR)
 
 # Define the upload folder and allowed extensions
 photo_folder = os.path.join('static', 'uploads')  # Ensure this folder exists
