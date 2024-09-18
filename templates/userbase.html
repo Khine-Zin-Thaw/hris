@@ -47,15 +47,15 @@
     
     <!-- Contact Info -->
     <div class="contact-info">
-      <p>Email: <a href="mailto:support@yourwebsite.com">support@yourwebsite.com</a></p>
+      <p>Email: <a href="mailto:support@yourwebsite.com">support@gmail.com</a></p>
       <p>Phone: <a href="tel:+1234567890">+1 (234) 567-890</a></p>
     </div>
 
     <!-- Quick Links -->
     <div class="quick-links">
-      <a href="/about-us">About Us</a>
-      <a href="/privacy-policy">Privacy Policy</a>
-      <a href="/terms-of-service">Terms of Service</a>
+      <a href="{{ url_for('about_us') }}">About Us</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
     </div>
 
     <!-- Social Links -->
@@ -73,7 +73,7 @@
 
     <!-- Newsletter -->
     <div class="newsletter">
-      <form action="/subscribe" method="POST">
+      <form action="#" method="POST">
         <input type="email" name="email" placeholder="Subscribe to our newsletter" required>
         <button type="submit">Subscribe</button>
       </form>

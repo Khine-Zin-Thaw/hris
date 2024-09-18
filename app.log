@@ -7048,3 +7048,47 @@ INFO:werkzeug:127.0.0.1 - - [17/Sep/2024 23:16:43] "[36mGET /static/assets/js/m
 INFO:werkzeug:127.0.0.1 - - [17/Sep/2024 23:16:43] "[36mGET /static/assets/vendor/js/menu.js HTTP/1.1[0m" 304 -
 INFO:werkzeug:127.0.0.1 - - [17/Sep/2024 23:16:43] "[36mGET /static/assets/js/dashboards-analytics.js HTTP/1.1[0m" 304 -
 INFO:werkzeug:127.0.0.1 - - [17/Sep/2024 23:16:43] "[36mGET /static/assets/vendor/fonts/boxicons/boxicons.woff2 HTTP/1.1[0m" 304 -
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 137-972-407
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:03] "[32mGET / HTTP/1.1[0m" 302 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:03] "GET /login HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:03] "[33mGET /static/fonts/boxicons.css HTTP/1.1[0m" 404 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:04] "[36mGET /static/assets/vendor/css/core.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:04] "[36mGET /static/assets/vendor/css/theme-default.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:04] "[36mGET /static/assets/css/demo.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:04] "[36mGET /static/assets/vendor/css/pages/page-auth.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:04] "[36mGET /static/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:04] "[36mGET /static/assets/js/config.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:04] "[36mGET /static/assets/vendor/js/helpers.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:04] "[36mGET /static/assets/vendor/libs/jquery/jquery.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:04] "[36mGET /static/assets/vendor/js/bootstrap.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:04] "[36mGET /static/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:04] "[36mGET /static/assets/vendor/libs/popper/popper.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:04] "[36mGET /static/assets/js/main.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:04] "[36mGET /static/assets/vendor/js/menu.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:04] "[33mGET /static/assets/img/favicon/favicon.ico HTTP/1.1[0m" 404 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[32mPOST /login HTTP/1.1[0m" 302 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "GET /index HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[36mGET /static/assets/css/demo.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[36mGET /static/assets/vendor/css/theme-default.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[36mGET /static/assets/vendor/css/core.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[36mGET /static/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[36mGET /static/assets/vendor/js/helpers.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[36mGET /static/assets/vendor/fonts/boxicons.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[36mGET /static/assets/js/config.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[36mGET /static/assets/vendor/libs/apex-charts/apex-charts.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[36mGET /static/uploads/29249a67-cf74-4cc8-a36e-4d51aecc450c.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[36mGET /static/assets/img/illustrations/man-with-laptop-light.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[36mGET /static/assets/vendor/libs/jquery/jquery.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[36mGET /static/assets/vendor/libs/popper/popper.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[36mGET /static/assets/vendor/js/menu.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[36mGET /static/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[36mGET /static/assets/vendor/js/bootstrap.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[36mGET /static/assets/js/main.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[36mGET /static/assets/js/dashboards-analytics.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[36mGET /static/assets/vendor/libs/apex-charts/apexcharts.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [18/Sep/2024 11:58:21] "[36mGET /static/assets/vendor/fonts/boxicons/boxicons.woff2 HTTP/1.1[0m" 304 -
