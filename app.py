@@ -1,9 +1,24 @@
+# Reference for sqlite database set up:
+# Source: https://docs.python.org/3/library/sqlite3.html
+# Source: https://www.sqlite.org/doclist.html
+# Reference for Flask:
+# Source: https://flask.palletsprojects.com/en/3.0.x/
+# Reference for the opensource 
+# Source: https://github.com/orangehrm/orangehrm
+# Reference for html template
+# Source: https://themewagon.com/themes/free-responsive-bootstrap-5-html5-admin-template-sneat/
+# Other Reference:
+# Sources
+# https://youtu.be/TM7VPOjM7zk
+# https://youtu.be/nwj9Rf7qDDI
+
+
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, redirect, url_for, session, flash
 import sqlite3
-import bcrypt
-import logging
 import os
+import logging
+import bcrypt
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -12,19 +27,22 @@ app.secret_key = 'secret'
 logging.basicConfig(filename='app.log', level=logging.ERROR)
 
 # Define the upload folder and allowed extensions
-profile_folder = os.path.join('static', 'uploads')  # Ensure this folder exists
+photo_folder = os.path.join('static', 'uploads')  # Ensure this folder exists
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-app.config['UPLOAD_FOLDER'] = profile_folder
+app.config['UPLOAD_FOLDER'] = photo_folder
+
 
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
 
 def allowed_file(filename):
+    """ Checking for the file extension"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 def get_db():
+    """ Set Up connection to database"""
     conn = sqlite3.connect('hrm.db')
     conn.row_factory = sqlite3.Row
     return conn
@@ -33,6 +51,7 @@ def get_db():
 @app.route('/')
 @app.route('/index')
 def index():
+    """ For the displaying of the admin dashboard"""
     if 'role' not in session:
         return redirect(url_for('login'))
 
@@ -76,6 +95,7 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """ Log In page"""
     if request.method == 'POST':
         emp_id = request.form.get('emp_id')
         password = request.form.get('password')
@@ -130,6 +150,7 @@ def login():
 
 @app.route('/logout')
 def logout():
+    """ Log out page""" 
     session.pop('emp_id', None)
     session.pop('role', None)
     return redirect(url_for('login'))
@@ -190,7 +211,8 @@ def add_department():
 
     # Fetch all employees for the leader selection dropdown
     cursor.execute(
-        'SELECT emp_id, emp_name FROM employee WHERE emp_id NOT IN (SELECT leader_id FROM department WHERE leader_id IS NOT NULL)')
+        '''SELECT emp_id, emp_name FROM employee WHERE emp_id NOT IN
+        (SELECT leader_id FROM department WHERE leader_id IS NOT NULL)''')
     employees = cursor.fetchall()
 
     conn.close()
@@ -199,7 +221,9 @@ def add_department():
     total_pages = (total + per_page - 1) // per_page
 
     # Pass the departments and employees to the template
-    return render_template('add_department.html', departments=departments, employees=employees, page=page, total_pages=total_pages)
+    return render_template('add_department.html', departments=departments,
+                           employees=employees, page=page,
+                           total_pages=total_pages)
 
 
 @app.route('/edit_department/<int:dept_id>', methods=['GET', 'POST'])
@@ -229,12 +253,14 @@ def edit_department(dept_id):
             # 1. Remove the `is_dept_leader` flag from the previous leader
             if current_leader_id:
                 cursor.execute(
-                    'UPDATE employee SET is_dept_leader = 0 WHERE emp_id = ?', (current_leader_id,))
+                    'UPDATE employee SET is_dept_leader = 0 WHERE emp_id = ?',
+                    (current_leader_id,))
 
             # 2. Set the `is_dept_leader` flag for the new leader
             if new_leader_id:
                 cursor.execute(
-                    'UPDATE employee SET is_dept_leader = 1 WHERE emp_id = ?', (new_leader_id,))
+                    'UPDATE employee SET is_dept_leader = 1 WHERE emp_id = ?',
+                    (new_leader_id,))
 
             conn.commit()
             flash('Department updated successfully!')
@@ -248,19 +274,23 @@ def edit_department(dept_id):
 
     # GET request: Fetch the department details
     cursor.execute(
-        'SELECT dept_id, name, leader_id FROM department WHERE dept_id = ?', (dept_id,))
+        'SELECT dept_id, name, leader_id FROM department WHERE dept_id = ?',
+        (dept_id,))
     department = cursor.fetchone()
 
-    # Fetch all employees (excluding current leaders or the current leader of this department)
+    # Fetch all employees (excluding current leaders or the current leader of
+    # this department)
     cursor.execute('''
         SELECT emp_id, emp_name FROM employee
-        WHERE emp_id NOT IN (SELECT leader_id FROM department WHERE leader_id IS NOT NULL AND leader_id != ?)
+        WHERE emp_id NOT IN (SELECT leader_id FROM department WHERE leader_id
+        IS NOT NULL AND leader_id != ?)
         OR emp_id = ?
     ''', (department[2], department[2]))
     employees = cursor.fetchall()
 
     conn.close()
-    return render_template('edit_department.html', department=department, employees=employees)
+    return render_template('edit_department.html', department=department,
+                           employees=employees)
 
 
 @app.route('/delete_department/<int:dept_id>', methods=['POST'])
@@ -331,7 +361,8 @@ def add_position():
 
             # Insert new position into the database with the inferred department
             cursor.execute('''
-                INSERT INTO position (position_name, dept_id, team_id, basic_salary)
+                INSERT INTO position 
+                (position_name, dept_id, team_id, basic_salary)
                 VALUES (?, ?, ?, ?)
             ''', (position_name, department_id, team_id, basic_salary))
             conn.commit()
@@ -357,7 +388,8 @@ def add_position():
 
     # Fetch positions with pagination
     cursor.execute('''
-        SELECT p.pos_id, p.position_name, d.name AS department_name, t.team_name, p.basic_salary
+        SELECT p.pos_id, p.position_name, d.name AS
+        department_name, t.team_name, p.basic_salary
         FROM position p
         LEFT JOIN department d ON p.dept_id = d.dept_id
         LEFT JOIN team t ON p.team_id = t.team_id
@@ -373,7 +405,9 @@ def add_position():
 
     conn.close()
 
-    return render_template('add_position.html', teams=teams, positions=positions, page=page, total_pages=total_pages)
+    return render_template('add_position.html', teams=teams,
+                           positions=positions, page=page,
+                           total_pages=total_pages)
 
 
 @app.route('/edit_position/<int:pos_id>', methods=['GET', 'POST'])
@@ -421,7 +455,8 @@ def edit_position(pos_id):
 
     conn.close()
 
-    return render_template('edit_position.html', position=position, departments=departments, teams=teams)
+    return render_template('edit_position.html', position=position,
+                           departments=departments, teams=teams)
 
 
 @app.route('/delete_position/<int:pos_id>', methods=['POST'])
@@ -590,6 +625,7 @@ def check_employee_accounts():
         total_pages_employees=total_pages_employees
     )
 
+
 @app.route('/reset_password/<int:user_id>', methods=['GET', 'POST'])
 def reset_password(user_id):
     if 'role' not in session:
@@ -624,7 +660,8 @@ def reset_password(user_id):
             return redirect(url_for('reset_password', user_id=user_id))
 
         # Hash the new password using bcrypt
-        hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+        hashed_password = bcrypt.hashpw(
+            new_password.encode('utf-8'), bcrypt.gensalt())
 
         try:
             cursor.execute('''
@@ -638,7 +675,8 @@ def reset_password(user_id):
 
         except sqlite3.Error as e:
             conn.rollback()
-            flash(f'An error occurred while resetting the password: {e}', 'danger')
+            flash(f'An error occurred while resetting the password: {
+                  e}', 'danger')
 
         finally:
             conn.close()
@@ -648,6 +686,7 @@ def reset_password(user_id):
     conn.close()
 
     return render_template('reset_password.html', user=user)
+
 
 @app.route('/add_users', methods=['POST'])
 def add_users():
@@ -703,7 +742,8 @@ def myinfo():
     # Fetch employee information including phone_number and photo
     cursor.execute('''
         SELECT e.emp_id, e.emp_name, e.phone_number, e.photo, p.position_name, e.job_status, e.gender, 
-               e.termination_date, e.employee_status, e.join_date, d.name AS department_name, t.team_name
+               e.termination_date, e.employee_status, e.join_date, d.name
+               AS department_name, t.team_name
         FROM employee e
         JOIN position p ON e.pos_id = p.pos_id
         JOIN department d ON p.dept_id = d.dept_id
@@ -739,8 +779,10 @@ def add_employee():
     emp_id = session.get('emp_id')  # Assuming emp_id is stored in the session
     if session.get('role') == 'staff':
         cursor.execute('''
-            SELECT e.emp_id, e.emp_name, e.email, e.phone_number, p.position_name, e.job_status, e.gender, e.termination_date, 
-                   e.employee_status, e.join_date, d.name AS department_name, e.photo
+            SELECT
+            e.emp_id, e.emp_name, e.email, e.phone_number, p.position_name,
+            e.job_status, e.gender, e.termination_date, 
+            e.employee_status, e.join_date, d.name AS department_name, e.photo
             FROM employee e
             JOIN position p ON e.pos_id = p.pos_id
             JOIN department d ON p.dept_id = d.dept_id
@@ -749,8 +791,10 @@ def add_employee():
         ''', (emp_id, per_page, offset))
     else:
         cursor.execute('''
-            SELECT e.emp_id, e.emp_name, e.email, e.phone_number, p.position_name, e.job_status, e.gender, e.termination_date, 
-                   e.employee_status, e.join_date, d.name AS department_name, e.photo
+            SELECT
+            e.emp_id, e.emp_name, e.email, e.phone_number,
+            p.position_name, e.job_status, e.gender, e.termination_date,
+            e.employee_status, e.join_date, d.name AS department_name, e.photo
             FROM employee e
             JOIN position p ON e.pos_id = p.pos_id
             JOIN department d ON p.dept_id = d.dept_id
@@ -818,9 +862,14 @@ def add_employee():
 
                 # Insert the new employee into the employee table
                 cursor.execute('''
-                    INSERT INTO employee (emp_name, email, phone_number, dept_id, pos_id, job_status, gender, termination_date, join_date, employee_status, photo)
+                    INSERT INTO employee 
+                    (emp_name, email, phone_number, dept_id, pos_id,
+                    job_status, gender, termination_date, join_date,
+                    employee_status, photo)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (emp_name, email, phone, department_id, position_id, job_status, gender, termination_date, join_date, employee_status, photo_filename))
+                ''', (emp_name, email, phone, department_id, position_id,
+                      job_status, gender, termination_date, join_date,
+                      employee_status, photo_filename))
 
                 emp_id = cursor.lastrowid  # Get the last inserted employee ID
 
@@ -836,9 +885,11 @@ def add_employee():
 
                 # Insert the employee's career information into the career table
                 cursor.execute('''
-                    INSERT INTO career (emp_id, pos_id, dept_id, team_id, status, start_date)
+                    INSERT INTO career 
+                    (emp_id, pos_id, dept_id, team_id, status, start_date)
                     VALUES (?, ?, ?, ?, ?, ?)
-                ''', (emp_id, position_id, department_id, None, 'new_join', join_date))  # Assuming team_id is None initially
+                ''', (emp_id, position_id, department_id, None, 'new_join',
+                      join_date))  # Assuming team_id is None initially
 
                 conn.commit()
                 flash(
@@ -859,7 +910,9 @@ def add_employee():
 
     conn.close()
 
-    return render_template('add_employee.html', positions=positions, employees=employees, page=page, total_pages=total_pages)
+    return render_template('add_employee.html', positions=positions,
+                           employees=employees, page=page,
+                           total_pages=total_pages)
 
 
 @app.route('/edit_employee/<int:emp_id>', methods=['GET', 'POST'])
@@ -872,7 +925,10 @@ def edit_employee(emp_id):
 
     # Fetch the employee data to pre-fill the form
     cursor.execute('''
-        SELECT e.emp_id, e.emp_name, e.email, e.phone_number, p.pos_id, e.job_status, e.gender, e.join_date, e.employee_status, e.termination_date, e.photo
+        SELECT
+        e.emp_id, e.emp_name, e.email, e.phone_number,
+        p.pos_id, e.job_status, e.gender, e.join_date, e.employee_status,
+        e.termination_date, e.photo
         FROM employee e
         JOIN position p ON e.pos_id = p.pos_id
         WHERE e.emp_id = ?
@@ -919,9 +975,13 @@ def edit_employee(emp_id):
             # Update the employee data along with the new salary if the position changes
             cursor.execute('''
                 UPDATE employee 
-                SET emp_name = ?, email = ?, phone_number = ?, pos_id = ?, job_status = ?, gender = ?, join_date = ?, employee_status = ?, termination_date = ?, photo = ?
+                SET emp_name = ?, email = ?, phone_number = ?, pos_id = ?,
+                job_status = ?, gender = ?, join_date = ?, employee_status = ?,
+                termination_date = ?, photo = ?
                 WHERE emp_id = ?
-            ''', (emp_name, email, phone, position_id, job_status, gender, join_date, employee_status, termination_date, photo_filename, emp_id))
+            ''', (emp_name, email, phone, position_id, job_status, gender,
+                  join_date, employee_status, termination_date, photo_filename,
+                  emp_id))
 
             # Update the basic salary in the payroll table
             cursor.execute('''
@@ -940,7 +1000,8 @@ def edit_employee(emp_id):
         return redirect(url_for('add_employee'))
 
     conn.close()
-    return render_template('edit_employee.html', employee=employee, positions=positions)
+    return render_template('edit_employee.html', employee=employee,
+                           positions=positions)
 
 
 @app.route('/delete_employee/<int:emp_id>', methods=['POST'])
@@ -1009,7 +1070,8 @@ def check_in():
         SELECT date, status
         FROM attendance
         WHERE emp_id = ? AND date BETWEEN ? AND ?
-    ''', (session['emp_id'], start_of_week.strftime('%Y-%m-%d'), end_of_week.strftime('%Y-%m-%d')))
+    ''', (session['emp_id'], start_of_week.strftime('%Y-%m-%d'),
+          end_of_week.strftime('%Y-%m-%d')))
 
     attendance = cursor.fetchall()
 
@@ -1068,7 +1130,8 @@ def view_attendance():
         WHERE a.date BETWEEN ? AND ?
         ORDER BY a.date DESC
         LIMIT ? OFFSET ?
-    ''', (start_of_month.strftime('%Y-%m-%d'), end_of_month.strftime('%Y-%m-%d'), per_page, offset))
+    ''', (start_of_month.strftime('%Y-%m-%d'),
+          end_of_month.strftime('%Y-%m-%d'), per_page, offset))
 
     attendance = cursor.fetchall()
 
@@ -1076,7 +1139,8 @@ def view_attendance():
     cursor.execute('''
         SELECT COUNT(*) FROM attendance
         WHERE date BETWEEN ? AND ?
-    ''', (start_of_month.strftime('%Y-%m-%d'), end_of_month.strftime('%Y-%m-%d')))
+    ''', (start_of_month.strftime('%Y-%m-%d'),
+          end_of_month.strftime('%Y-%m-%d')))
     total_records = cursor.fetchone()[0]
 
     conn.close()
@@ -1084,7 +1148,8 @@ def view_attendance():
     # Pass total pages count and current page for pagination
     total_pages = (total_records + per_page - 1) // per_page
 
-    return render_template('view_attendance.html', attendance=attendance, page=page, total_pages=total_pages)
+    return render_template('view_attendance.html', attendance=attendance,
+                           page=page, total_pages=total_pages)
 
 
 @app.route('/edit_attendance/<int:emp_id>/<date>', methods=['GET', 'POST'])
@@ -1119,7 +1184,8 @@ def edit_attendance(emp_id, date):
         return redirect(url_for('view_attendance'))
 
     conn.close()
-    return render_template('edit_attendance.html', emp_id=emp_id, date=date, status=attendance_record['status'])
+    return render_template('edit_attendance.html', emp_id=emp_id, date=date,
+                           status=attendance_record['status'])
 
 
 @app.route('/delete_attendance/<int:emp_id>/<date>', methods=['POST'])
@@ -1145,7 +1211,10 @@ def delete_attendance(emp_id, date):
 
 @app.route('/payroll_landing', methods=['GET'])
 def payroll_landing():
-    if 'role' not in session or session['role'] not in ['manager', 'payroll_admin', 'staff', 'recruit_admin']:
+    if 'role' not in session or session['role'] not in ['manager',
+                                                        'payroll_admin',
+                                                        'staff',
+                                                        'recruit_admin']:
         return 'Access denied', 403
 
     conn = get_db()
@@ -1182,8 +1251,9 @@ def payroll_landing():
 
         # Fetch paginated records
         cursor.execute('''
-            SELECT e.emp_id, e.emp_name AS name, p.basic_salary, p.tax, p.ssb, p.monthly_payout, 
-                   p.net_salary, p.total_present, p.total_leave, p.edit_reason
+            SELECT e.emp_id, e.emp_name AS name, p.basic_salary, p.tax, p.ssb,
+            p.monthly_payout,
+            p.net_salary, p.total_present, p.total_leave, p.edit_reason
             FROM payroll p
             JOIN employee e ON p.emp_id = e.emp_id
             LIMIT ? OFFSET ?
@@ -1196,7 +1266,8 @@ def payroll_landing():
 
     conn.close()
 
-    return render_template('payroll_landing.html', payroll_data=payroll_data, page=page, total_pages=total_pages)
+    return render_template('payroll_landing.html', payroll_data=payroll_data,
+                           page=page, total_pages=total_pages)
 
 
 @app.route('/calculate_payroll', methods=['POST'])
@@ -1254,9 +1325,11 @@ def calculate_payroll():
             # Update payroll records
             db.execute('''
                 UPDATE payroll
-                SET monthly_payout = ?, tax = ?, ssb = ?, net_salary = ?, total_present = ?, total_leave = ?
+                SET monthly_payout = ?, tax = ?, ssb = ?, net_salary = ?,
+                total_present = ?, total_leave = ?
                 WHERE emp_id = ?
-            ''', (monthly_payout, tax, ssb_amount, net_salary, total_present, total_leave, emp_id))
+            ''', (monthly_payout, tax, ssb_amount, net_salary, total_present,
+                  total_leave, emp_id))
 
         db.commit()
         session['success'] = 'Payroll calculated and updated successfully!'
@@ -1281,17 +1354,20 @@ def payroll_settings():
             # Update payroll settings in the database
             if default_ssb:
                 db.execute(
-                    'UPDATE payroll_settings SET default_ssb = ?', (default_ssb,))
+                    'UPDATE payroll_settings SET default_ssb = ?',
+                    (default_ssb,))
             if tax_percentage:
                 db.execute(
-                    'UPDATE payroll_settings SET tax_percentage = ?', (tax_percentage,))
+                    'UPDATE payroll_settings SET tax_percentage = ?',
+                    (tax_percentage,))
 
             # Update existing employee payroll records
             if default_ssb:
                 db.execute('UPDATE payroll SET ssb = ?', (default_ssb,))
             if tax_percentage:
                 db.execute(
-                    'UPDATE payroll SET tax = monthly_payout * ? / 100', (tax_percentage,))
+                    'UPDATE payroll SET tax = monthly_payout * ? / 100',
+                    (tax_percentage,))
 
             db.commit()
             session['success'] = 'Settings updated successfully!'
@@ -1308,7 +1384,9 @@ def payroll_settings():
     current_ssb_amount = settings['default_ssb'] if settings else 6000.0
     current_tax_rate = settings['tax_percentage'] if settings else 3.0
 
-    return render_template('payroll_settings.html', current_ssb_amount=current_ssb_amount, current_tax_rate=current_tax_rate)
+    return render_template('payroll_settings.html',
+                           current_ssb_amount=current_ssb_amount,
+                           current_tax_rate=current_tax_rate)
 
 
 @app.route('/edit_payroll/<emp_id>', methods=['GET', 'POST'])
@@ -1343,7 +1421,8 @@ def edit_payroll(emp_id):
 
 @app.route('/reset_payroll', methods=['POST'])
 def reset_payroll():
-    if 'role' not in session or session['role'] not in ['manager', 'payroll_admin']:
+    if 'role' not in session or session['role'] not in ['manager',
+                                                        'payroll_admin']:
         return 'Access denied', 403
 
     conn = get_db()
@@ -1358,8 +1437,11 @@ def reset_payroll():
     try:
         # Step 1: Insert records into payroll_archive, avoiding duplicates
         cursor.execute('''
-            INSERT OR IGNORE INTO payroll_archive (emp_id, basic_salary, tax, ssb, total_present, total_leave, monthly_payout, net_salary, month, year, edit_reason)
-            SELECT emp_id, basic_salary, tax, ssb, total_present, total_leave, monthly_payout, net_salary, ?, ?, edit_reason
+            INSERT OR IGNORE INTO payroll_archive
+            (emp_id, basic_salary, tax, ssb, total_present, total_leave,
+            monthly_payout, net_salary, month, year, edit_reason)
+            SELECT emp_id, basic_salary, tax, ssb, total_present, total_leave,
+            monthly_payout, net_salary, ?, ?, edit_reason
             FROM payroll
             WHERE NOT EXISTS (
                 SELECT 1 FROM payroll_archive 
@@ -1370,14 +1452,15 @@ def reset_payroll():
         # Step 2: Reset payroll data
         cursor.execute('''
             UPDATE payroll
-            SET tax = 0, ssb = 0, monthly_payout = 0, net_salary = 0, total_present = 0, total_leave = 0, edit_reason = ''
+            SET tax = 0, ssb = 0, monthly_payout = 0, net_salary = 0,
+            total_present = 0, total_leave = 0, edit_reason = ''
         ''')
 
         # Commit changes
         conn.commit()
 
         # Set success message
-        session['success'] = 'Payroll has been reset and archived successfully.'
+        session['success'] = 'Payroll has been reset and archived successfully'
 
     except Exception as e:
         # Rollback in case of error
@@ -1393,7 +1476,8 @@ def reset_payroll():
 
 @app.route('/view_archived_payroll', methods=['GET', 'POST'])
 def view_archived_payroll():
-    if 'role' not in session or session['role'] not in ['manager', 'payroll_admin']:
+    if 'role' not in session or session['role'] not in ['manager',
+                                                        'payroll_admin']:
         return 'Access denied', 403
 
     conn = get_db()
@@ -1411,7 +1495,8 @@ def view_archived_payroll():
     if request.method == 'POST':
         selected_month = request.form['month']
         selected_year = request.form['year']
-        return redirect(url_for('view_archived_payroll', month=selected_month, year=selected_year, page=1))
+        return redirect(url_for('view_archived_payroll', month=selected_month,
+                                year=selected_year, page=1))
 
     if selected_month and selected_year:
         # Count total records for pagination
@@ -1428,7 +1513,10 @@ def view_archived_payroll():
 
         # Fetch paginated data
         cursor.execute('''
-            SELECT pa.emp_id, e.emp_name, pa.basic_salary, pa.tax, pa.ssb, pa.monthly_payout, pa.net_salary, pa.total_present, pa.total_leave, pa.month, pa.year, pa.edit_reason
+            SELECT
+            pa.emp_id, e.emp_name, pa.basic_salary, pa.tax, pa.ssb,
+            pa.monthly_payout, pa.net_salary, pa.total_present, pa.total_leave,
+            pa.month, pa.year, pa.edit_reason
             FROM payroll_archive pa
             JOIN employee e ON pa.emp_id = e.emp_id
             WHERE pa.month = ? AND pa.year = ?
@@ -1442,7 +1530,7 @@ def view_archived_payroll():
         total_pages = (total_records + per_page - 1) // per_page
 
     else:
-        total_pages = 0  # No pages to show initially
+        total_pages = 0
 
     conn.close()
 
@@ -1472,7 +1560,9 @@ def my_payroll():
 
     # Fetch archived payroll data for the current year
     cursor.execute('''
-        SELECT emp_id, basic_salary, tax, ssb, monthly_payout, net_salary, total_present, total_leave, month, year
+        SELECT 
+        emp_id, basic_salary, tax, ssb, monthly_payout, net_salary,
+        total_present, total_leave, month, year
         FROM payroll_archive
         WHERE emp_id = ? AND year = ?
         ORDER BY month ASC
@@ -1480,7 +1570,7 @@ def my_payroll():
 
     payroll_data = cursor.fetchall()
 
-    # Convert the rows to a list of dictionaries
+    # Convert the rows to a list of dictionaries since we will only get the number of the month for datetime
     payroll_data_list = []
     month_names = {
         '01': 'January', '02': 'February', '03': 'March', '04': 'April',
@@ -1493,7 +1583,8 @@ def my_payroll():
         record['month'] = month_names.get(record['month'], record['month'])
         payroll_data_list.append(record)
 
-    return render_template('my_payroll.html', payroll_data=payroll_data_list, current_year=current_year)
+    return render_template('my_payroll.html', payroll_data=payroll_data_list,
+                           current_year=current_year)
 
 
 @app.route('/teams', methods=['GET', 'POST'])
@@ -1614,7 +1705,6 @@ def edit_team(team_id):
             department_id = request.form.get('department_id')
             new_team_leader_id = request.form.get('team_leader_id')
 
-            # Validate the form data
             if not team_name or not department_id:
                 flash('Team name and department are required.', 'danger')
                 return redirect(url_for('edit_team', team_id=team_id))
@@ -1636,12 +1726,14 @@ def edit_team(team_id):
             # Reset the `is_team_leader` flag for the current leader if it is changing
             if current_team_leader_id and current_team_leader_id != new_team_leader_id:
                 cursor.execute(
-                    'UPDATE employee SET is_team_leader = 0 WHERE emp_id = ?', (current_team_leader_id,))
+                    'UPDATE employee SET is_team_leader = 0 WHERE emp_id = ?',
+                    (current_team_leader_id,))
 
             # Set the `is_team_leader` flag for the new leader
             if new_team_leader_id:
                 cursor.execute(
-                    'UPDATE employee SET is_team_leader = 1 WHERE emp_id = ?', (new_team_leader_id,))
+                    'UPDATE employee SET is_team_leader = 1 WHERE emp_id = ?',
+                    (new_team_leader_id,))
 
             conn.commit()
             flash('Team updated successfully!', 'success')
@@ -1657,21 +1749,22 @@ def edit_team(team_id):
             flash('Team not found.', 'danger')
             return redirect(url_for('teams'))
 
-        # Fetch the list of departments and employees for dropdowns
         cursor.execute('SELECT dept_id, name FROM department')
         departments = cursor.fetchall()
 
         cursor.execute('''
             SELECT emp_id, emp_name 
             FROM employee 
-            WHERE emp_id NOT IN (SELECT leader_id FROM team WHERE leader_id IS NOT NULL) 
+            WHERE emp_id NOT IN (SELECT leader_id FROM team WHERE leader_id
+            IS NOT NULL) 
             OR emp_id = ?
         ''', (team[3],))
         employees = cursor.fetchall()
 
         conn.close()
 
-        return render_template('edit_teams.html', team=team, departments=departments, employees=employees)
+        return render_template('edit_teams.html', team=team,
+                               departments=departments, employees=employees)
 
     except Exception as e:
         flash(f"An error occurred: {str(e)}", 'danger')
@@ -1696,7 +1789,6 @@ def contact_us():
 
     teams = cursor.fetchall()
 
-    # Pass the team details to the template
     return render_template('contact_us.html', teams=teams)
 
 
@@ -1705,7 +1797,6 @@ def submit_feedback():
     if 'role' not in session:
         return redirect(url_for('login'))
 
-    # Capture form data
     staff_name = request.form.get('staff_name')
     problem_description = request.form.get('problem_description')
     team_id = request.form.get('team_id')
@@ -1713,18 +1804,17 @@ def submit_feedback():
     # Get the current date
     submission_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    # Input validation
     if not staff_name or not problem_description or not team_id:
         flash('All fields are required!', 'danger')
         return redirect(url_for('people_link'))
 
-    # Database insertion
     try:
         conn = get_db()
         cursor = conn.cursor()
 
         cursor.execute('''
-            INSERT INTO feedback (staff_name, problem_description, team_id, submission_date)
+            INSERT INTO feedback
+            (staff_name, problem_description, team_id, submission_date)
             VALUES (?, ?, ?, ?)
         ''', (staff_name, problem_description, team_id, submission_date))
 
@@ -1747,7 +1837,7 @@ def my_attendance():
 
     conn = get_db()
     cursor = conn.cursor()
-    emp_id = session.get('emp_id')  # Assuming emp_id is stored in the session
+    emp_id = session.get('emp_id')
 
     # Get the current year and month to filter attendance data for the current month
     current_year = datetime.now().year
@@ -1764,7 +1854,6 @@ def my_attendance():
     ''', (emp_id, str(current_year), str(current_month).zfill(2)))
     attendance_records = cursor.fetchall()
 
-    # Fetch positions for display in the template (if needed)
     cursor.execute('SELECT pos_id, position_name FROM position')
     positions = cursor.fetchall()
 
