@@ -183,7 +183,7 @@
                   </a>
                   <ul class="dropdown-menu dropdown-menu-end">
                     <li>
-                      <a class="dropdown-item" href="#">
+                      <a class="dropdown-item" href="{{ url_for('myinfo') }}" target=_blank>
                         <div class="d-flex align-items-center">
                           <div class="avatar avatar-online me-2">
                             {% if session.get('photo') == 'default-avatar.jpg' %}

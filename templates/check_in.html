@@ -7,16 +7,6 @@
             <!-- Flash Messages Section -->
             <div class="card-body">
                 <h6 class="text-muted">Check In Now!!!!</h6>
-                {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <div class="alert alert-danger">
-                        {% for message in messages %}
-                            {{ message }}
-                        {% endfor %}
-                    </div>
-                {% endif %}
-                {% endwith %}
-                
                 <!-- Image -->
                 <img class="card-img-top" src="{{ url_for('static', filename='assets/img/elements/checkin1.webp') }}" alt="Attendance Status Image">
 

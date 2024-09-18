@@ -823,11 +823,6 @@ def add_employee():
 
         # File upload handling
         photo = request.files.get('photo')  # Profile photo upload
-        if photo:
-            print(f"Uploaded file name: {photo.filename}")
-        else:
-            print("No file uploaded")
-
         if not emp_name or not email or not phone or not position_id or not job_status or not join_date or not employee_status:
             flash('All fields are required!')
             return redirect(url_for('add_employee'))
@@ -835,13 +830,8 @@ def add_employee():
         # Handle photo upload
         photo_filename = None  # Default if no photo is uploaded
         if photo and photo.filename != '':  # Check if the file exists
-            print(f"Photo detected: {photo.filename}")  # Debugging statement
-            # Assuming you have an 'allowed_file' function to validate extensions
             if allowed_file(photo.filename):
                 photo_filename = secure_filename(photo.filename)
-                # Debugging statement
-                print(f"Saving photo as: {photo_filename}")
-                # Save file
                 photo.save(os.path.join(
                     app.config['UPLOAD_FOLDER'], photo_filename))
             else:
@@ -1286,11 +1276,12 @@ def calculate_payroll():
 
         # Get all employees
         employees = db.execute(
-            'SELECT emp_id, basic_salary FROM payroll').fetchall()
+            'SELECT emp_id, basic_salary, edit_reason FROM payroll').fetchall()
 
         for employee in employees:
             emp_id = employee['emp_id']
             basic_salary = employee['basic_salary']
+            edit_reason = employee['edit_reason'] if employee['edit_reason'] else ""
 
             # Fetch attendance records for the employee
             attendance = db.execute('''
@@ -1326,10 +1317,10 @@ def calculate_payroll():
             db.execute('''
                 UPDATE payroll
                 SET monthly_payout = ?, tax = ?, ssb = ?, net_salary = ?,
-                total_present = ?, total_leave = ?
+                total_present = ?, total_leave = ?, edit_reason = ?
                 WHERE emp_id = ?
             ''', (monthly_payout, tax, ssb_amount, net_salary, total_present,
-                  total_leave, emp_id))
+                  total_leave, edit_reason, emp_id))
 
         db.commit()
         session['success'] = 'Payroll calculated and updated successfully!'
@@ -1421,52 +1412,56 @@ def edit_payroll(emp_id):
 
 @app.route('/reset_payroll', methods=['POST'])
 def reset_payroll():
-    if 'role' not in session or session['role'] not in ['manager',
-                                                        'payroll_admin']:
+    if 'role' not in session or session['role'] not in ['manager', 'payroll_admin']:
         return 'Access denied', 403
-
+        return redirect(url_for('login'))
     conn = get_db()
     cursor = conn.cursor()
 
-    # Get the current month and year
     from datetime import datetime
     now = datetime.now()
     current_month = now.strftime('%B')
     current_year = now.strftime('%Y')
 
     try:
-        # Step 1: Insert records into payroll_archive, avoiding duplicates
-        cursor.execute('''
-            INSERT OR IGNORE INTO payroll_archive
-            (emp_id, basic_salary, tax, ssb, total_present, total_leave,
-            monthly_payout, net_salary, month, year, edit_reason)
-            SELECT emp_id, basic_salary, tax, ssb, total_present, total_leave,
-            monthly_payout, net_salary, ?, ?, edit_reason
-            FROM payroll
-            WHERE NOT EXISTS (
-                SELECT 1 FROM payroll_archive 
-                WHERE emp_id = payroll.emp_id AND month = ? AND year = ?
-            )
-        ''', (current_month, current_year, current_month, current_year))
 
-        # Step 2: Reset payroll data
+        employees = cursor.execute('SELECT emp_id, basic_salary, tax, ssb, total_present, total_leave, monthly_payout, net_salary, edit_reason FROM payroll').fetchall()
+
+        for employee in employees:
+            emp_id, basic_salary, tax, ssb, total_present, total_leave, monthly_payout, net_salary, edit_reason = employee
+
+            cursor.execute('''
+                UPDATE payroll_archive
+                SET basic_salary = ?, tax = ?, ssb = ?, total_present = ?,
+                total_leave = ?, monthly_payout = ?, net_salary = ?,
+                edit_reason = ?, archived_date = CURRENT_TIMESTAMP
+                WHERE emp_id = ? AND month = ? AND year = ?
+            ''', (basic_salary, tax, ssb, total_present, total_leave,
+                  monthly_payout, net_salary, edit_reason, emp_id,
+                  current_month, current_year))
+
+            if cursor.rowcount == 0:
+                cursor.execute('''
+                    INSERT INTO payroll_archive
+                    (emp_id, basic_salary, tax, ssb, total_present,
+                    total_leave, monthly_payout, net_salary, month, year,
+                    archived_date, edit_reason)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+                ''', (emp_id, basic_salary, tax, ssb, total_present,
+                      total_leave, monthly_payout, net_salary, current_month,
+                      current_year, edit_reason))
+
+        # Step 4: Reset the payroll data after archiving
         cursor.execute('''
             UPDATE payroll
             SET tax = 0, ssb = 0, monthly_payout = 0, net_salary = 0,
             total_present = 0, total_leave = 0, edit_reason = ''
         ''')
 
-        # Commit changes
         conn.commit()
 
-        # Set success message
-        session['success'] = 'Payroll has been reset and archived successfully'
-
-    except Exception as e:
-        # Rollback in case of error
+    except Exception:
         conn.rollback()
-        # Set error message
-        session['error'] = f'Error occurred while resetting payroll: {str(e)}'
 
     finally:
         conn.close()
