@@ -870,14 +870,6 @@ def add_employee():
                     VALUES (?, ?, ?, ?)
                 ''', (emp_id, basic_salary, current_month, current_year))
 
-                # Insert the employee's career information into the career table
-                cursor.execute('''
-                    INSERT INTO career 
-                    (emp_id, pos_id, dept_id, team_id, status, start_date)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                ''', (emp_id, position_id, department_id, None, 'new_join',
-                      join_date))  # Assuming team_id is None initially
-
                 conn.commit()
                 flash(
                     'Employee added successfully with photo!' if photo_filename else 'Employee added successfully without photo!')
@@ -1259,9 +1251,11 @@ def payroll_landing():
 
 @app.route('/calculate_payroll', methods=['POST'])
 def calculate_payroll():
-    if session.get('role') != 'manager':
-        return redirect(url_for('index'))
-
+    if 'role' not in session or session['role'] not in ['manager',
+                                                        'payroll_admin',
+                                                        'staff',
+                                                        'recruit_admin']:
+        return 'Access denied', 403
     db = get_db()
 
     try:
@@ -1320,10 +1314,8 @@ def calculate_payroll():
                   total_leave, edit_reason, emp_id))
 
         db.commit()
-        session['success'] = 'Payroll calculated and updated successfully!'
-    except Exception as e:
-        session['error'] = f'Error calculating payroll: {e}'
-
+    except Exception:
+        return redirect(url_for('payroll_landing'))
     return redirect(url_for('payroll_landing'))
 
 
